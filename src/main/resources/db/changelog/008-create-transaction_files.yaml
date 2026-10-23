@@ -1,0 +1,62 @@
+databaseChangeLog:
+  - changeSet:
+      id: 008-create-transaction_files
+      author: alan
+      changes:
+        - createTable:
+            tableName: transaction_files
+            columns:
+              - column:
+                  name: id
+                  type: VARCHAR(36)
+                  constraints:
+                    primaryKey: true
+
+              - column:
+                  name: transaction_id
+                  type: VARCHAR(36)
+                  constraints:
+                    nullable: false
+
+              - column:
+                  name: file_path
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+
+              - column:
+                  name: file_name
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+
+              - column:
+                  name: content_type
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+
+              - column:
+                  name: file_size
+                  type: INT8
+                  constraints:
+                    nullable: false
+
+              - column:
+                  name: file_type
+                  type: VARCHAR(50)
+                  defaultValue: OTHER
+                  constraints:
+                    nullable: false
+
+              - column:
+                  name: created_at
+                  type: TIMESTAMP
+                  constraints:
+                    nullable: false
+
+              - column:
+                  name: updated_at
+                  type: TIMESTAMP
+                  constraints:
+                    nullable: false

@@ -1,0 +1,17 @@
+databaseChangeLog:
+  #=====================================
+  # USER SESSIONS
+  #=====================================
+  - changeSet:
+      id: add-is-active-users
+      author: alan
+      changes:
+        - addColumn:
+            tableName: users
+            columns:
+              - column:
+                  name: is_active
+                  type: BOOLEAN
+                  defaultValueBoolean: true
+                  constraints:
+                    nullable: false

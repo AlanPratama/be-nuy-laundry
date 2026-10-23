@@ -1,0 +1,60 @@
+databaseChangeLog:
+  - changeSet:
+      id: 009-create-user_sessions
+      author: alan
+      changes:
+        - createTable:
+            tableName: user_sessions
+            columns:
+              - column:
+                  name: id
+                  type: VARCHAR(36)
+                  constraints:
+                    primaryKey: true
+
+              - column:
+                  name: user_id
+                  type: VARCHAR(36)
+                  constraints:
+                    nullable: false
+
+              - column:
+                  name: access_token
+                  type: TEXT
+                  constraints:
+                    nullable: false
+
+              - column:
+                  name: refresh_token
+                  type: TEXT
+                  constraints:
+                    nullable: false
+
+              - column:
+                  name: is_active
+                  type: BOOL
+                  defaultValue: true
+                  constraints:
+                    nullable: false
+
+              - column:
+                  name: device_info
+                  type: VARCHAR(255)
+
+              - column:
+                  name: expires_at
+                  type: TIMESTAMP
+                  constraints:
+                    nullable: false
+
+              - column:
+                  name: created_at
+                  type: TIMESTAMP
+                  constraints:
+                    nullable: false
+
+              - column:
+                  name: updated_at
+                  type: TIMESTAMP
+                  constraints:
+                    nullable: false

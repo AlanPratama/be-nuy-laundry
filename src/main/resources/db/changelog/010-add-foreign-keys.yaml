@@ -1,0 +1,114 @@
+databaseChangeLog:
+  #=====================================
+  # USER SESSIONS
+  #=====================================
+  - changeSet:
+      id: add-fk-user-sessions-user
+      author: alan
+      changes:
+        - addForeignKeyConstraint:
+            constraintName: fk_user_sessions_user
+            baseTableName: user_sessions
+            baseColumnNames: user_id
+            referencedTableName: users
+            referencedColumnNames: id
+            onDelete: CASCADE
+
+  #=====================================
+  # PACKAGES BENEFITS
+  #=====================================
+  - changeSet:
+      id: add-fk-packages-benefits-package
+      author: alan
+      changes:
+        - addForeignKeyConstraint:
+            constraintName: fk_packages_benefits_package
+            baseTableName: packages_benefits
+            baseColumnNames: package_id
+            referencedTableName: packages
+            referencedColumnNames: id
+            onDelete: CASCADE
+
+  - changeSet:
+      id: add-fk-packages-benefits-benefit
+      author: alan
+      changes:
+        - addForeignKeyConstraint:
+            constraintName: fk_packages_benefits_benefit
+            baseTableName: packages_benefits
+            baseColumnNames: benefit_id
+            referencedTableName: benefits
+            referencedColumnNames: id
+            onDelete: CASCADE
+
+
+  #=====================================
+  # TRANSACTIONS
+  #=====================================
+  - changeSet:
+      id: add-fk-transactions-user
+      author: alan
+      changes:
+        - addForeignKeyConstraint:
+            constraintName: fk_transactions_user
+            baseTableName: transactions
+            baseColumnNames: user_id
+            referencedTableName: users
+            referencedColumnNames: id
+            onDelete: SET NULL
+
+  - changeSet:
+      id: add-fk-transactions-customer
+      author: alan
+      changes:
+        - addForeignKeyConstraint:
+            constraintName: fk_transactions_customer
+            baseTableName: transactions
+            baseColumnNames: customer_id
+            referencedTableName: customers
+            referencedColumnNames: id
+            onDelete: SET NULL
+
+
+  #=====================================
+  # TRANSACTION DETAILS
+  #=====================================
+  - changeSet:
+      id: add-fk-transaction-details-package
+      author: alan
+      changes:
+        - addForeignKeyConstraint:
+            constraintName: fk_transaction_detail_package
+            baseTableName: transaction_details
+            baseColumnNames: package_id
+            referencedTableName: packages
+            referencedColumnNames: id
+            onDelete: SET NULL
+
+  - changeSet:
+      id: add-fk-transaction-details-transaction
+      author: alan
+      changes:
+        - addForeignKeyConstraint:
+            constraintName: fk_transaction_detail_transaction
+            baseTableName: transaction_details
+            baseColumnNames: transaction_id
+            referencedTableName: transactions
+            referencedColumnNames: id
+            onDelete: CASCADE
+
+
+  #=====================================
+  # TRANSACTION FILES
+  #=====================================
+  - changeSet:
+      id: add-fk-transaction-files-transaction
+      author: alan
+      changes:
+        - addForeignKeyConstraint:
+            constraintName: fk_transaction_file_transaction
+            baseTableName: transaction_files
+            baseColumnNames: transaction_id
+            referencedTableName: transactions
+            referencedColumnNames: id
+            onDelete: CASCADE

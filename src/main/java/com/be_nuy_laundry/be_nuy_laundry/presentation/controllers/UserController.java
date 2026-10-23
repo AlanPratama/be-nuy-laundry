@@ -1,0 +1,92 @@
+package com.be_nuy_laundry.be_nuy_laundry.presentation.controllers;
+
+import com.be_nuy_laundry.be_nuy_laundry.application.ports.in.UserUseCase;
+import com.be_nuy_laundry.be_nuy_laundry.common.response.ApiResponse;
+import com.be_nuy_laundry.be_nuy_laundry.common.response.PageResponse;
+import com.be_nuy_laundry.be_nuy_laundry.common.util.PageUtil;
+import com.be_nuy_laundry.be_nuy_laundry.common.util.ResponseUtil;
+import com.be_nuy_laundry.be_nuy_laundry.infrastructure.internal.database.filters.UserFilter;
+import com.be_nuy_laundry.be_nuy_laundry.presentation.dtos.request.user.UserCreateRequestDTO;
+import com.be_nuy_laundry.be_nuy_laundry.presentation.dtos.request.user.UserResetPasswordRequestDTO;
+import com.be_nuy_laundry.be_nuy_laundry.presentation.dtos.request.user.UserUpdateRequestDTO;
+import com.be_nuy_laundry.be_nuy_laundry.presentation.dtos.response.UserResponseDTO;
+import com.be_nuy_laundry.be_nuy_laundry.presentation.validations.ValidImage;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+
+@RestController
+@RequestMapping("/api/v1/users")
+@RequiredArgsConstructor
+@Validated
+public class UserController {
+
+    private final UserUseCase userUseCase;
+
+    private final String SUCCESS_RETRIEVE_DATA_MSG = "SUCCESS";
+    private final String SUCCESS_CREATE_DATA_MSG = "SUCCESS";
+    private final String SUCCESS_UPDATE_DATA_MSG = "SUCCESS";
+    private final String SUCCESS_DELETE_DATA_MSG = "SUCCESS";
+    private final String SUCCESS_RESET_PASSWORD_MSG = "SUCCESS";
+
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<ApiResponse<UserResponseDTO>> create(
+            @RequestPart("request") @Valid UserCreateRequestDTO request,
+            @RequestPart(value = "file", required = false) @ValidImage(required = false) MultipartFile file
+    ) {
+        request.setFile(file);
+
+        UserResponseDTO created = userUseCase.createUser(request);
+        return ResponseUtil.success(SUCCESS_CREATE_DATA_MSG, created);
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<ApiResponse<UserResponseDTO>> getById(@PathVariable String id) {
+        return ResponseUtil.success(SUCCESS_RETRIEVE_DATA_MSG, userUseCase.getUserById(id));
+    }
+
+    @GetMapping
+    public ResponseEntity<ApiResponse<PageResponse<UserResponseDTO>>> getAll(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "createdAt") String sortBy,
+            @RequestParam(defaultValue = "desc") String direction,
+            @RequestParam(required = false) String name
+    ) {
+        UserFilter userFilter = UserFilter.builder()
+                .name(name)
+                .build();
+
+        Pageable pageable = PageUtil.setPageable(page, size, sortBy, direction);
+
+        return ResponseUtil.successPage(SUCCESS_RETRIEVE_DATA_MSG, userUseCase.getAllUsers(userFilter, pageable));
+    }
+
+    @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<ApiResponse<UserResponseDTO>> update(
+            @PathVariable String id,
+            @RequestPart("request") @Valid UserUpdateRequestDTO request,
+            @RequestPart(value = "file", required = false) @ValidImage(required = false) MultipartFile file
+    ) {
+        request.setFile(file);
+
+        return ResponseUtil.success(SUCCESS_UPDATE_DATA_MSG, userUseCase.updateUser(id, request));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<ApiResponse<Void>> delete(@PathVariable String id) {
+        userUseCase.deleteUser(id);
+        return ResponseUtil.success(SUCCESS_DELETE_DATA_MSG, null);
+    }
+
+    @PatchMapping("/{id}")
+    public ResponseEntity<ApiResponse<UserResponseDTO>> resetPassword(@PathVariable String id, @Valid @RequestBody UserResetPasswordRequestDTO request) {
+        return ResponseUtil.success(SUCCESS_RESET_PASSWORD_MSG, userUseCase.resetPassword(id, request));
+    }
+
+}

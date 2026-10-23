@@ -1,0 +1,253 @@
+# 07 - API & External Integration
+
+Dokumen ini menyajikan katalog lengkap seluruh REST API endpoint yang tersedia pada backend **Nuy Laundry**, format request dan response, mekanisme autentikasi/otorisasi aktual, serta status integrasi sistem eksternal.
+
+---
+
+## 1. Format Standar Komunikasi API
+
+Seluruh endpoint pada aplikasi ini mengembalikan struktur JSON terstandarisasi melalui pembungkus `ApiResponse<T>`:
+
+### Format Sukses Single Data
+```json
+{
+  "code": 200,
+  "status": true,
+  "message": "SUCCESS",
+  "errors": null,
+  "data": {
+    "id": "c1f71a74-95d9-482a-a9e9-74d618d36eb1"
+  }
+}
+```
+
+### Format Sukses Berhalaman (Pagination)
+```json
+{
+  "code": 200,
+  "status": true,
+  "message": "SUCCESS",
+  "errors": null,
+  "data": {
+    "content": [ ... ],
+    "pageNumber": 0,
+    "pageSize": 10,
+    "totalElements": 25,
+    "totalPages": 3,
+    "isLastPage": false
+  }
+}
+```
+
+### Format Error / Validasi Gagal (HTTP 400 / 422)
+```json
+{
+  "code": 400,
+  "status": false,
+  "message": "Validation failed",
+  "errors": {
+    "email": "Format email tidak valid",
+    "password": "Password wajib diisi"
+  },
+  "data": null
+}
+```
+
+---
+
+## 2. Inventaris Lengkap Endpoint API
+
+Berdasarkan konfigurasi aktual pada `SecurityConfig.java` dan `@PreAuthorize`:
+- **Publik (`permitAll`)**: `/api/auth/**`, `/api/v1/users/**` (Lihat catatan temuan keamanan pada dokumen 11).
+- **Perlu Autentikasi (`authenticated`)**: Semua endpoint selain auth dan users.
+- **Role-based (`ADMIN`, `SUPER_ADMIN`)**: Khusus `POST /api/v1/packages`, `PUT /api/v1/packages/{id}`, `DELETE /api/v1/packages/{id}`.
+
+| Modul | Method | URL Path | Role / Izin Akses | Fungsi & Deskripsi |
+| :--- | :--- | :--- | :--- | :--- |
+| **Auth** | `POST` | `/api/auth/login` | Publik | Otentikasi user & generate Bearer JWT |
+| **Auth** | `POST` | `/api/auth/refresh-token` | Publik | Refresh token kedaluwarsa |
+| **Customers**| `POST` | `/api/v1/customers` | Authenticated | Tambah data pelanggan baru |
+| **Customers**| `GET` | `/api/v1/customers/{id}` | Authenticated | Ambil detail pelanggan berdasarkan ID |
+| **Customers**| `GET` | `/api/v1/customers` | Authenticated | Ambil daftar pelanggan berhalaman & filter |
+| **Customers**| `PUT` | `/api/v1/customers/{id}` | Authenticated | Perbarui data pelanggan |
+| **Customers**| `DELETE` | `/api/v1/customers/{id}` | Authenticated | Hapus data pelanggan |
+| **Packages** | `POST` | `/api/v1/packages` | `ADMIN`, `SUPER_ADMIN` | Tambah paket laundry (Multipart: request + file) |
+| **Packages** | `GET` | `/api/v1/packages/{id}` | Authenticated | Ambil detail paket laundry |
+| **Packages** | `GET` | `/api/v1/packages/{id}/benefit` | Authenticated | Ambil paket berdasarkan ID benefit (*Catatan: bug parameter*) |
+| **Packages** | `GET` | `/api/v1/packages` | Authenticated | Ambil daftar paket berhalaman & filter |
+| **Packages** | `PUT` | `/api/v1/packages/{id}` | `ADMIN`, `SUPER_ADMIN` | Perbarui data paket laundry (Multipart) |
+| **Packages** | `DELETE` | `/api/v1/packages/{id}` | `ADMIN`, `SUPER_ADMIN` | Hapus paket laundry |
+| **Benefits** | `POST` | `/api/v1/benefits` | Authenticated | Tambah master benefit baru |
+| **Benefits** | `GET` | `/api/v1/benefits/{id}` | Authenticated | Ambil detail benefit |
+| **Benefits** | `GET` | `/api/v1/benefits` | Authenticated | Ambil daftar benefit berhalaman & filter |
+| **Benefits** | `PUT` | `/api/v1/benefits/{id}` | Authenticated | Perbarui data benefit |
+| **Benefits** | `DELETE` | `/api/v1/benefits/{id}` | Authenticated | Hapus benefit |
+| **Transactions**| `POST` | `/api/v1/transactions` | Authenticated | Buat transaksi laundry baru (Multipart: request + foto) |
+| **Transactions**| `GET` | `/api/v1/transactions/{id}` | Authenticated | Ambil detail transaksi laundry & detail item |
+| **Transactions**| `GET` | `/api/v1/transactions` | Authenticated | Ambil daftar transaksi berhalaman & filter |
+| **Transactions**| `PUT` | `/api/v1/transactions/{id}` | Authenticated | Perbarui status transaksi laundry |
+| **Transactions**| `DELETE` | `/api/v1/transactions/{id}` | Authenticated | Hapus data transaksi |
+| **Trans. Details**| `DELETE`| `/api/v1/transaction-details/{id}`| Authenticated | Hapus satu baris detail item transaksi |
+| **Trans. Files** | `POST` | `/api/v1/transaction-files` | Authenticated | Upload file/bukti tambahan transaksi |
+| **Trans. Files** | `DELETE` | `/api/v1/transaction-files/{id}` | Authenticated | Hapus satu file transaksi berdasarkan ID |
+| **Trans. Files** | `DELETE` | `/api/v1/transaction-files/list` | Authenticated | Hapus sekumpulan file transaksi sekaligus (bulk) |
+| **Users** | `POST` | `/api/v1/users` | Publik *(Konfigurasi saat ini)* | Registrasi user / staf baru (Multipart) |
+| **Users** | `GET` | `/api/v1/users/{id}` | Publik *(Konfigurasi saat ini)* | Ambil data user |
+| **Users** | `GET` | `/api/v1/users` | Publik *(Konfigurasi saat ini)* | Ambil daftar user berhalaman |
+| **Users** | `PUT` | `/api/v1/users/{id}` | Publik *(Konfigurasi saat ini)* | Perbarui profil user (Multipart) |
+| **Users** | `DELETE` | `/api/v1/users/{id}` | Publik *(Konfigurasi saat ini)* | Hapus user |
+| **Users** | `PATCH` | `/api/v1/users/{id}` | Publik *(Konfigurasi saat ini)* | Reset password user |
+
+---
+
+## 3. Spesifikasi Detail Endpoint Kritis
+
+### A. Autentikasi: `POST /api/auth/login`
+- **Fungsi**: Memverifikasi credential user dan menerbitkan token JWT serta mencatat sesi di database & Redis.
+- **Service/Repo Dipanggil**: `AuthServiceImpl`, `UserRepository`, `UserSessionRepository`, `RedisService`, `JwtUtil`.
+- **Request Body (`application/json`)**:
+```json
+{
+  "email": "admin@nuylaundry.com",
+  "password": "Password123!"
+}
+```
+- **Response Sukses (HTTP 200)**:
+```json
+{
+  "code": 200,
+  "status": true,
+  "message": "SUCCESS",
+  "errors": null,
+  "data": {
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.dummy_token_payload...",
+    "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.dummy_refresh_payload..."
+  }
+}
+```
+- **Error Responses**:
+  - `400 Bad Request`: Format JSON tidak valid atau email kosong.
+  - `401 Unauthorized`: Email tidak terdaftar atau password salah.
+
+---
+
+### B. Transaksi: `POST /api/v1/transactions`
+- **Fungsi**: Membuat order transaksi laundry lengkap beserta detail item dan foto kondisi barang awal.
+- **Content-Type**: `multipart/form-data`
+- **Bagian Multipart**:
+  - `request` (`application/json`): DTO `TransactionRequestDTO`
+  - `paymentReceiptFile` (`image/*`, opsional): Bukti bayar
+  - `invoiceDocumentFile` (`image/*`, opsional): Dokumen fisik
+  - `conditionBeforeFiles` (`List<image/*>`, opsional): Foto pakaian sebelum dicuci
+  - `conditionAfterFiles` (`List<image/*>`, opsional): Foto pakaian setelah dicuci
+  - `otherFiles` (`List<image/*>`, opsional): Dokumen pendukung lain
+- **Contoh Payload Part `request`**:
+```json
+{
+  "customerId": "8f9024f2-5ec8-452a-9e0c-99c0d12e98a1",
+  "paymentStatus": "UNPAID",
+  "description": "Pakaian dinas jangan gunakan pemutih",
+  "transactionDetails": [
+    {
+      "packageId": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "qty": 3.5,
+      "deliveredDate": "2026-10-27 10:00:00"
+    }
+  ]
+}
+```
+- **Service/Repo Dipanggil**: `TransactionServiceImpl`, `TransactionDatabaseAdapter`, `CustomerDatabaseAdapter`, `PackageDatabaseAdapter`, `MinioStorageAdapter`.
+- **Response Sukses (HTTP 200)**:
+```json
+{
+  "code": 200,
+  "status": true,
+  "message": "SUCCESS",
+  "errors": null,
+  "data": {
+    "id": "e4b2d56a-7890-4abc-9def-0123456789ab",
+    "invoiceNo": "INV-20261024-0001",
+    "customerId": "8f9024f2-5ec8-452a-9e0c-99c0d12e98a1",
+    "status": "WAITING",
+    "paymentStatus": "UNPAID",
+    "totalAmount": 70000.0,
+    "transactionDate": "2026-10-24 01:00:00",
+    "details": [
+      {
+        "id": "11111111-2222-3333-4444-555555555555",
+        "packageId": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+        "qty": 3.5,
+        "price": 20000.0,
+        "totalAmount": 70000.0
+      }
+    ],
+    "files": []
+  }
+}
+```
+
+---
+
+### C. Manajemen File: `POST /api/v1/transaction-files`
+- **Fungsi**: Mengunggah file tambahan untuk transaksi yang sudah ada.
+- **Content-Type**: `multipart/form-data`
+- **Bagian Multipart**:
+  - `request` (`application/json`): `{"invoiceNo": "INV-20261024-0001"}`
+  - `paymentReceiptFile` (opsional)
+  - `invoiceDocumentFile` (opsional)
+  - `conditionBeforeFiles` (opsional)
+  - `conditionAfterFiles` (opsional)
+  - `otherFiles` (opsional)
+- **Response Sukses (HTTP 200)**:
+```json
+{
+  "code": 200,
+  "status": true,
+  "message": "SUCCESS",
+  "errors": null,
+  "data": [
+    {
+      "id": "f5e4d3c2-b1a0-9876-5432-10fedcba9876",
+      "invoiceNo": "INV-20261024-0001",
+      "fileName": "payment-receipt-20261024.jpg",
+      "filePath": "transactions/payment-receipt-20261024.jpg",
+      "fileType": "PAYMENT_RECEIPT"
+    }
+  ]
+}
+```
+- **Catatan Investigasi**: Pada implementasi saat ini terdapat bug inversi logika pada validasi `invoiceNo`. Lihat dokumen 11.
+
+---
+
+### D. Status Transaksi: `PUT /api/v1/transactions/{id}`
+- **Fungsi**: Memperbarui status pengerjaan atau status pembayaran laundry.
+- **Request Body (`application/json`)**:
+```json
+{
+  "status": "PROCESS",
+  "paymentStatus": "PAID"
+}
+```
+- **Aturan Transisi Status**:
+  - `WAITING` -> `PROCESS` -> `DONE` -> `DELIVERED`. Transisi mundur atau langsung melompat dari `WAITING` ke `DELIVERED` akan ditolak dengan `400 Bad Request`.
+
+---
+
+## 4. Status Integrasi Sistem Eksternal
+
+### A. MinIO S3 Object Storage
+- **Protokol**: S3 Compatible REST API via MinIO Java SDK 8.5.7.
+- **Host**: `localhost:9000` (atau `minio:9000` di dalam Docker network).
+- **Bucket**: `nuy-laundry` (diperiksa/dibuat otomatis saat bootstrap via `makeBucket`).
+- **Timeout**: Default OkHttp client timeout (10 detik connect, 10 detik write, 10 detik read).
+- **Mekanisme Retry / Circuit Breaker**: Tidak ada library circuit breaker (seperti Resilience4j) yang terpasang pada repository. Operasi I/O ditangani secara synchronous langsung di thread servlet.
+
+### B. Redis Cache Sesi
+- **Protokol**: Redis Serialization Protocol (RESP) via Spring Data Redis (Jedis/Lettuce).
+- **Host**: `localhost:6379` (atau `redis:6379`).
+- **Fungsi**: Menyimpan sesi token aktif dengan key format `session:<userId>` atau `token:<jwt>` dengan Time-To-Live (TTL) yang sinkron dengan masa berlaku JWT.
+
+### C. RabbitMQ Message Broker
+- **Status Faktual**: **Tidak Terintegrasi pada Source Code**.
+- **Bukti**: Layanan RabbitMQ dikonfigurasi pada `docker-compose.yaml` (port `5672`/`15672`) dan tercantum pada `application.properties`, namun dependensi `spring-boot-starter-amqp` tidak ada di `pom.xml`, serta tidak ada kelas producer, listener, queue, atau exchange di dalam codebase.

@@ -1,0 +1,14 @@
+databaseChangeLog:
+  #=====================================
+  # USER SESSIONS
+  #=====================================
+  - changeSet:
+      id: add-photo-packages
+      author: alan
+      changes:
+        - addColumn:
+            tableName: packages
+            columns:
+              - column:
+                  name: photo
+                  type: VARCHAR(255)
