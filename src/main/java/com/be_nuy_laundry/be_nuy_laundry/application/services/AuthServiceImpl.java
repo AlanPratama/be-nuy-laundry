@@ -12,6 +12,7 @@ import com.be_nuy_laundry.be_nuy_laundry.infrastructure.internal.database.mapper
 import com.be_nuy_laundry.be_nuy_laundry.infrastructure.internal.security.contract.JwtService;
 import com.be_nuy_laundry.be_nuy_laundry.presentation.dtos.request.auth.LoginRequestDTO;
 import com.be_nuy_laundry.be_nuy_laundry.presentation.dtos.request.auth.RefreshTokenRequest;
+import com.be_nuy_laundry.be_nuy_laundry.presentation.dtos.response.UserResponseDTO;
 import com.be_nuy_laundry.be_nuy_laundry.presentation.dtos.response.auth.AuthResponseDTO;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -104,6 +105,29 @@ public class AuthServiceImpl implements AuthUseCase {
     @Transactional
     public void logoutAll(String userId) {
         authRepositoryPort.deactiveAllSessionByUserId(userId);
+    }
+
+    @Override
+    public UserResponseDTO getAuthenticatedUser(String accessToken) {
+        String sessionId = jwtService.extractSessionId(accessToken);
+
+        UserSessionModel userSessionModel = sessionCacheService.get(sessionId).orElse(null);
+        if (userSessionModel == null) {
+            userSessionModel = authRepositoryPort.findById(sessionId)
+                    .orElseThrow(() -> new UnauthorizedException("Sesi telah berakhir"));
+            sessionCacheService.save(userSessionModel);
+        }
+
+        if (!Boolean.TRUE.equals(userSessionModel.getIsActive()))
+            throw new UnauthorizedException("Sesi telah berakhir");
+
+        if (userSessionModel.getExpiresAt() != null &&
+                userSessionModel.getExpiresAt().isBefore(LocalDateTime.now())) {
+            throw new UnauthorizedException("Sesi telah berakhir");
+        }
+
+        String username = jwtService.extractUsername(accessToken);
+        return userUseCase.getUserByUsername(username);
     }
 
 }

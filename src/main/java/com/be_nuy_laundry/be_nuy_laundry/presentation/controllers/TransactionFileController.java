@@ -17,9 +17,12 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
+import org.springframework.validation.annotation.Validated;
+
 @RestController
 @RequestMapping("/api/v1/transaction-files")
 @RequiredArgsConstructor
+@Validated
 public class TransactionFileController {
 
     private final TransactionFileUseCase transactionFileUseCase;
@@ -30,11 +33,11 @@ public class TransactionFileController {
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ApiResponse<List<TransactionFileModel>>> upload(
             @RequestPart("request") @Valid TransactionFileUploadRequestDTO request,
-            @RequestPart("paymentReceiptFile") @ValidImage MultipartFile paymentReceiptFile,
-            @RequestPart("invoiceDocumentFile") @ValidImage MultipartFile invoiceDocumentFile,
-            @RequestPart("conditionBeforeFiles") @ValidImage List<MultipartFile> conditionBeforeFiles,
-            @RequestPart("conditionAfterFiles") @ValidImage List<MultipartFile> conditionAfterFiles,
-            @RequestPart("otherFiles") @ValidImage List<MultipartFile> otherFiles
+            @RequestPart(value = "paymentReceiptFile", required = false) @ValidImage(required = false) MultipartFile paymentReceiptFile,
+            @RequestPart(value = "invoiceDocumentFile", required = false) @ValidImage(required = false) MultipartFile invoiceDocumentFile,
+            @RequestPart(value = "conditionBeforeFiles", required = false) List<@ValidImage(required = false) MultipartFile> conditionBeforeFiles,
+            @RequestPart(value = "conditionAfterFiles", required = false) List<@ValidImage(required = false) MultipartFile> conditionAfterFiles,
+            @RequestPart(value = "otherFiles", required = false) List<@ValidImage(required = false) MultipartFile> otherFiles
     ) {
         request.setPaymentReceiptFile(paymentReceiptFile);
         request.setInvoiceDocumentFile(invoiceDocumentFile);

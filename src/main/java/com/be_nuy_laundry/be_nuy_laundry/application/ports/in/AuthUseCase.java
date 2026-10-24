@@ -4,6 +4,8 @@ import com.be_nuy_laundry.be_nuy_laundry.presentation.dtos.request.auth.LoginReq
 import com.be_nuy_laundry.be_nuy_laundry.presentation.dtos.request.auth.RefreshTokenRequest;
 import com.be_nuy_laundry.be_nuy_laundry.presentation.dtos.response.auth.AuthResponseDTO;
 
+import com.be_nuy_laundry.be_nuy_laundry.presentation.dtos.response.UserResponseDTO;
+
 public interface AuthUseCase {
 
     AuthResponseDTO login(LoginRequestDTO request);
@@ -13,5 +15,7 @@ public interface AuthUseCase {
     void logout(String accessToken);
 
     void logoutAll(String userId);
+
+    UserResponseDTO getAuthenticatedUser(String accessToken);
 
 }

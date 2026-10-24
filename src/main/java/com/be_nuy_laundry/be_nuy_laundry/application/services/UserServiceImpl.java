@@ -54,6 +54,7 @@ public class UserServiceImpl implements UserUseCase {
         userModel.setProfilePicture(filePath);
         userModel.setRole(ValueUtil.orElseUserRole(requestDTO.getRole(), UserRole.STAFF));
         userModel.setPassword(passwordEncoder.encode(userModel.getPassword()));
+        userModel.setIsActive(Boolean.TRUE);
 
         return UserMapper.mapDomainToResponse(userRepositoryPort.save(userModel));
     }

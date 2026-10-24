@@ -2,6 +2,7 @@ package com.be_nuy_laundry.be_nuy_laundry.infrastructure.internal.database.mappe
 
 import com.be_nuy_laundry.be_nuy_laundry.common.util.ValueUtil;
 import com.be_nuy_laundry.be_nuy_laundry.domain.model.TransactionFileModel;
+import com.be_nuy_laundry.be_nuy_laundry.infrastructure.internal.database.entity.TransactionEntity;
 import com.be_nuy_laundry.be_nuy_laundry.infrastructure.internal.database.entity.TransactionFileEntity;
 import com.be_nuy_laundry.be_nuy_laundry.infrastructure.internal.database.entity.enumrated.TransactionFileType;
 import org.springframework.web.multipart.MultipartFile;
@@ -25,7 +26,11 @@ public class TransactionFileMapper {
         entity.setCreatedAt(model.getCreatedAt());
         entity.setUpdatedAt(model.getUpdatedAt());
 
-//        entity.setTransaction(TransactionMapper.mapToEntity(model.getTransaction()));
+        if (model.getTransaction() != null && model.getTransaction().getId() != null) {
+            TransactionEntity transaction = new TransactionEntity();
+            transaction.setId(model.getTransaction().getId());
+            entity.setTransaction(transaction);
+        }
 
         return entity;
     }

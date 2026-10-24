@@ -66,4 +66,73 @@ class AuthControllerTest {
         assertThat(response.getBody().getMessage()).isEqualTo("SUCCESS");
         verify(authUseCase).refreshToken(request);
     }
+
+    @Test
+    @DisplayName("givenBearerToken_whenLogout_thenReturnSuccess")
+    void givenBearerToken_whenLogout_thenReturnSuccess() {
+        String authHeader = "Bearer sample.jwt.token";
+
+        ResponseEntity<ApiResponse<Void>> response = authController.logout(authHeader);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody()).isNotNull();
+        assertThat(response.getBody().getMessage()).isEqualTo("SUCCESS");
+        verify(authUseCase).logout("sample.jwt.token");
+    }
+
+    @Test
+    @DisplayName("givenRawToken_whenLogout_thenReturnSuccess")
+    void givenRawToken_whenLogout_thenReturnSuccess() {
+        String authHeader = "sample.jwt.token";
+
+        ResponseEntity<ApiResponse<Void>> response = authController.logout(authHeader);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody()).isNotNull();
+        assertThat(response.getBody().getMessage()).isEqualTo("SUCCESS");
+        verify(authUseCase).logout("sample.jwt.token");
+    }
+
+    @Test
+    @DisplayName("givenNullAuthHeader_whenLogout_thenThrowUnauthorizedException")
+    void givenNullAuthHeader_whenLogout_thenThrowUnauthorizedException() {
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> authController.logout(null))
+                .isInstanceOf(com.be_nuy_laundry.be_nuy_laundry.common.exception.UnauthorizedException.class)
+                .hasMessage("Token tidak ditemukan");
+    }
+
+    @Test
+    @DisplayName("givenBlankAuthHeader_whenLogout_thenThrowUnauthorizedException")
+    void givenBlankAuthHeader_whenLogout_thenThrowUnauthorizedException() {
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> authController.logout("   "))
+                .isInstanceOf(com.be_nuy_laundry.be_nuy_laundry.common.exception.UnauthorizedException.class)
+                .hasMessage("Token tidak ditemukan");
+    }
+
+    @Test
+    @DisplayName("givenBearerToken_whenGetAuthenticatedUser_thenReturnUserResponse")
+    void givenBearerToken_whenGetAuthenticatedUser_thenReturnUserResponse() {
+        String authHeader = "Bearer sample.jwt.token";
+        com.be_nuy_laundry.be_nuy_laundry.presentation.dtos.response.UserResponseDTO userResponseDTO =
+                new com.be_nuy_laundry.be_nuy_laundry.presentation.dtos.response.UserResponseDTO();
+        userResponseDTO.setUsername("admin");
+        when(authUseCase.getAuthenticatedUser("sample.jwt.token")).thenReturn(userResponseDTO);
+
+        ResponseEntity<ApiResponse<com.be_nuy_laundry.be_nuy_laundry.presentation.dtos.response.UserResponseDTO>> response =
+                authController.getAuthenticatedUser(authHeader);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody()).isNotNull();
+        assertThat(response.getBody().getData()).isEqualTo(userResponseDTO);
+        assertThat(response.getBody().getMessage()).isEqualTo("SUCCESS");
+        verify(authUseCase).getAuthenticatedUser("sample.jwt.token");
+    }
+
+    @Test
+    @DisplayName("givenNullAuthHeader_whenGetAuthenticatedUser_thenThrowUnauthorizedException")
+    void givenNullAuthHeader_whenGetAuthenticatedUser_thenThrowUnauthorizedException() {
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> authController.getAuthenticatedUser(null))
+                .isInstanceOf(com.be_nuy_laundry.be_nuy_laundry.common.exception.UnauthorizedException.class)
+                .hasMessage("Token tidak ditemukan");
+    }
 }
