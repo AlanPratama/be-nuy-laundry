@@ -8,6 +8,7 @@ import com.be_nuy_laundry.be_nuy_laundry.common.constant.MinIoConstant;
 import com.be_nuy_laundry.be_nuy_laundry.common.exception.DataNotFoundException;
 import com.be_nuy_laundry.be_nuy_laundry.common.util.ValueUtil;
 import com.be_nuy_laundry.be_nuy_laundry.domain.model.TransactionFileModel;
+import com.be_nuy_laundry.be_nuy_laundry.domain.model.TransactionModel;
 import com.be_nuy_laundry.be_nuy_laundry.infrastructure.internal.database.entity.enumrated.TransactionFileType;
 import com.be_nuy_laundry.be_nuy_laundry.infrastructure.internal.database.mapper.TransactionFileMapper;
 import com.be_nuy_laundry.be_nuy_laundry.presentation.dtos.request.transaction.file.TransactionFileDeleteRequestDTO;
@@ -63,6 +64,14 @@ public class TransactionFileServiceImpl implements TransactionFileUseCase {
                 invoiceNo, paymentReceiptFile,
                 invoiceDocumentFile, conditionBeforeFiles,
                 conditionAfterFiles, otherFiles);
+
+        TransactionModel transactionModel = new TransactionModel();
+        transactionModel.setId(request.getTransactionId());
+        transactionModel.setInvoiceNo(invoiceNo);
+
+        for (TransactionFileModel fileModel : transactionFileModels) {
+            fileModel.setTransaction(transactionModel);
+        }
 
         return transactionFileRepositoryPort.saveAll(transactionFileModels);
     }

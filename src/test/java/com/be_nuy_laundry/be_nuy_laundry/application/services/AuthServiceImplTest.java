@@ -226,4 +226,114 @@ class AuthServiceImplTest {
 
         verify(authRepositoryPort).deactiveAllSessionByUserId(userId);
     }
+
+    @Test
+    @DisplayName("givenValidTokenAndCachedSession_whenGetAuthenticatedUser_thenReturnUserResponse")
+    void givenValidTokenAndCachedSession_whenGetAuthenticatedUser_thenReturnUserResponse() {
+        String token = "sample.token";
+        String sessionId = "sess-123";
+        String username = "admin";
+
+        UserSessionModel session = TestDataBuilder.createSampleSession();
+        session.setId(sessionId);
+        session.setIsActive(true);
+        session.setExpiresAt(java.time.LocalDateTime.now().plusDays(1));
+
+        com.be_nuy_laundry.be_nuy_laundry.presentation.dtos.response.UserResponseDTO expectedUser =
+                new com.be_nuy_laundry.be_nuy_laundry.presentation.dtos.response.UserResponseDTO();
+        expectedUser.setUsername(username);
+
+        when(jwtService.extractSessionId(token)).thenReturn(sessionId);
+        when(sessionCacheService.get(sessionId)).thenReturn(Optional.of(session));
+        when(jwtService.extractUsername(token)).thenReturn(username);
+        when(userUseCase.getUserByUsername(username)).thenReturn(expectedUser);
+
+        com.be_nuy_laundry.be_nuy_laundry.presentation.dtos.response.UserResponseDTO result =
+                authService.getAuthenticatedUser(token);
+
+        assertThat(result).isNotNull();
+        assertThat(result.getUsername()).isEqualTo(username);
+    }
+
+    @Test
+    @DisplayName("givenValidTokenAndDbSession_whenGetAuthenticatedUser_thenCacheAndReturnUserResponse")
+    void givenValidTokenAndDbSession_whenGetAuthenticatedUser_thenCacheAndReturnUserResponse() {
+        String token = "sample.token";
+        String sessionId = "sess-123";
+        String username = "admin";
+
+        UserSessionModel session = TestDataBuilder.createSampleSession();
+        session.setId(sessionId);
+        session.setIsActive(true);
+        session.setExpiresAt(java.time.LocalDateTime.now().plusDays(1));
+
+        com.be_nuy_laundry.be_nuy_laundry.presentation.dtos.response.UserResponseDTO expectedUser =
+                new com.be_nuy_laundry.be_nuy_laundry.presentation.dtos.response.UserResponseDTO();
+        expectedUser.setUsername(username);
+
+        when(jwtService.extractSessionId(token)).thenReturn(sessionId);
+        when(sessionCacheService.get(sessionId)).thenReturn(Optional.empty());
+        when(authRepositoryPort.findById(sessionId)).thenReturn(Optional.of(session));
+        when(jwtService.extractUsername(token)).thenReturn(username);
+        when(userUseCase.getUserByUsername(username)).thenReturn(expectedUser);
+
+        com.be_nuy_laundry.be_nuy_laundry.presentation.dtos.response.UserResponseDTO result =
+                authService.getAuthenticatedUser(token);
+
+        assertThat(result).isNotNull();
+        assertThat(result.getUsername()).isEqualTo(username);
+        verify(sessionCacheService).save(session);
+    }
+
+    @Test
+    @DisplayName("givenNotFoundSession_whenGetAuthenticatedUser_thenThrowUnauthorizedException")
+    void givenNotFoundSession_whenGetAuthenticatedUser_thenThrowUnauthorizedException() {
+        String token = "sample.token";
+        String sessionId = "sess-unknown";
+
+        when(jwtService.extractSessionId(token)).thenReturn(sessionId);
+        when(sessionCacheService.get(sessionId)).thenReturn(Optional.empty());
+        when(authRepositoryPort.findById(sessionId)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> authService.getAuthenticatedUser(token))
+                .isInstanceOf(UnauthorizedException.class)
+                .hasMessage("Sesi telah berakhir");
+    }
+
+    @Test
+    @DisplayName("givenInactiveSession_whenGetAuthenticatedUser_thenThrowUnauthorizedException")
+    void givenInactiveSession_whenGetAuthenticatedUser_thenThrowUnauthorizedException() {
+        String token = "sample.token";
+        String sessionId = "sess-inactive";
+
+        UserSessionModel session = TestDataBuilder.createSampleSession();
+        session.setId(sessionId);
+        session.setIsActive(false);
+
+        when(jwtService.extractSessionId(token)).thenReturn(sessionId);
+        when(sessionCacheService.get(sessionId)).thenReturn(Optional.of(session));
+
+        assertThatThrownBy(() -> authService.getAuthenticatedUser(token))
+                .isInstanceOf(UnauthorizedException.class)
+                .hasMessage("Sesi telah berakhir");
+    }
+
+    @Test
+    @DisplayName("givenExpiredSession_whenGetAuthenticatedUser_thenThrowUnauthorizedException")
+    void givenExpiredSession_whenGetAuthenticatedUser_thenThrowUnauthorizedException() {
+        String token = "sample.token";
+        String sessionId = "sess-expired";
+
+        UserSessionModel session = TestDataBuilder.createSampleSession();
+        session.setId(sessionId);
+        session.setIsActive(true);
+        session.setExpiresAt(java.time.LocalDateTime.now().minusDays(1));
+
+        when(jwtService.extractSessionId(token)).thenReturn(sessionId);
+        when(sessionCacheService.get(sessionId)).thenReturn(Optional.of(session));
+
+        assertThatThrownBy(() -> authService.getAuthenticatedUser(token))
+                .isInstanceOf(UnauthorizedException.class)
+                .hasMessage("Sesi telah berakhir");
+    }
 }
