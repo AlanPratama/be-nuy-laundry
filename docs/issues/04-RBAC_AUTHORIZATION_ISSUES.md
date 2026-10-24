@@ -202,8 +202,8 @@ Memvalidasi seluruh skenario positif dan negatif otorisasi peran secara otomatis
 ---
 
 ## 📋 Checklist Penerimaan (Definition of Done)
-- [ ] Endpoint `/api/v1/users/**` tidak lagi bersifat `permitAll()`.
-- [ ] Method mutasi data user (`POST`, `PUT`, `DELETE`, `PATCH`) dilindungi `@PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")`.
-- [ ] Exception `AccessDeniedException` mengembalikan status HTTP 403 dengan format JSON standar.
-- [ ] User role `STAFF` tidak mengalami kendala saat mengakses fitur kasir (Customer, Transaction, Transaction Files, dan Read Packages).
-- [ ] Seluruh unit test dan test runner API lulus 100%.
+- [x] Endpoint `/api/v1/users/**` tidak lagi bersifat `permitAll()`.
+- [x] Method mutasi data user (`POST`, `PUT`, `DELETE`, `PATCH`) dilindungi `@PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")`.
+- [x] Exception `AccessDeniedException` mengembalikan status HTTP 403 dengan format JSON standar.
+- [x] User role `STAFF` tidak mengalami kendala saat mengakses fitur kasir (Customer, Transaction, Transaction Files, dan Read Packages).
+- [x] Seluruh unit test (230) dan test runner API (54 skenario) lulus 100%.

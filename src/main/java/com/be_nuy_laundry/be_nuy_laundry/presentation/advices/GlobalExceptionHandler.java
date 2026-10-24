@@ -74,6 +74,13 @@ public class GlobalExceptionHandler {
         return ResponseUtil.errorResponse(ex.getMessage(), HttpStatus.FORBIDDEN);
     }
 
+    @ExceptionHandler(org.springframework.security.access.AccessDeniedException.class)
+    public ResponseEntity<ErrorResponse<String>> handleAccessDeniedException(org.springframework.security.access.AccessDeniedException ex) {
+        log.warn("[AccessDeniedException] Access denied: {}", ex.getMessage());
+
+        return ResponseUtil.errorResponse("Anda tidak memiliki hak akses untuk fitur ini", HttpStatus.FORBIDDEN);
+    }
+
     @ExceptionHandler(UnauthorizedException.class)
     public ResponseEntity<ErrorResponse<String>> handleUnauthorizedException(UnauthorizedException ex) {
         log.warn("[UnauthorizedException] Unauthorized: {}", ex.getMessage());

@@ -32,7 +32,7 @@ Kumpulan tiket tugas terstruktur berspesifikasi *high-level* untuk memandu junio
 | :--- | :--- | :---: |
 | [Performance Evaluation Report](./reports/PERFORMANCE_REPORT.md) | **Laporan hasil evaluasi performa**, eliminasi N+1, index PostgreSQL, HikariCP & k6 load test. | ✅ **100% Completed** |
 | [Performance Evaluation Issues](./issues/03-PERFORMANCE_EVALUATION_ISSUES.md) | Tiket evaluasi performa server, JVM, PostgreSQL N+1/indexing, Redis caching, MinIO throughput, & load testing (PERF-00 s/d PERF-11). | ✅ **100% Completed** |
-| [RBAC & Authorization Issues](./issues/04-RBAC_AUTHORIZATION_ISSUES.md) | Tiket implementasi Role-Based Access Control, proteksi operasi user khusus admin, dan penanganan AccessDenied (RBAC-01 s/d RBAC-05). | 📋 **Ready for Execution** |
+| [RBAC & Authorization Issues](./issues/04-RBAC_AUTHORIZATION_ISSUES.md) | Tiket implementasi Role-Based Access Control, proteksi operasi user khusus admin, dan penanganan AccessDenied (RBAC-01 s/d RBAC-05). | ✅ **100% Completed** |
 | [API Testing Issues](./issues/02-API_TESTING_ISSUES.md) | Tiket uji fungsional & negatif E2E (TEST-01 s/d TEST-06) dengan runner otomatis [scripts/test_runner.py](../scripts/test_runner.py). | ✅ **100% Pass (46/46)** |
 | [Unit Testing Issues](./issues/01-UNIT_TEST_ISSUES.md) | Tiket pembuatan unit test JUnit 5 & Mockito (UT-01 s/d UT-15) dengan 230 unit test. | ✅ **100% Pass (230/230)** |
 | [Project Plan & Service Ports](./PROJECT_PLAN.md) | Prioritas fitur roadmap, status modul, dan port lokal infrastruktur pendukung. | 📌 Active Reference |

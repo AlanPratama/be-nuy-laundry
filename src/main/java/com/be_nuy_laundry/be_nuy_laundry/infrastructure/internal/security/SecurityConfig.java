@@ -26,19 +26,20 @@ public class SecurityConfig {
             .csrf(AbstractHttpConfigurer::disable)
             .authorizeHttpRequests((auth) ->
                     auth.requestMatchers("/api/auth/**").permitAll()
-                        .requestMatchers("/api/v1/users/**").permitAll()
                         .requestMatchers("/actuator/health", "/actuator/health/**").permitAll()
-
-//                    .requestMatchers(HttpMethod.POST, "/api/v1/packages/**")
-//                        .hasAnyRole("ADMIN", "SUPER_ADMIN")
-//
-//                    .requestMatchers(HttpMethod.PUT, "/api/v1/packages/**")
-//                        .hasAnyRole("ADMIN", "SUPER_ADMIN")
-//
-//                    .requestMatchers(HttpMethod.DELETE, "/api/v1/packages/**")
-//                        .hasAnyRole("ADMIN", "SUPER_ADMIN")
-
-                    .anyRequest().authenticated())
+                        .anyRequest().authenticated())
+            .exceptionHandling(ex -> ex
+                .authenticationEntryPoint((request, response, authException) -> {
+                    response.setStatus(jakarta.servlet.http.HttpServletResponse.SC_UNAUTHORIZED);
+                    response.setContentType(org.springframework.http.MediaType.APPLICATION_JSON_VALUE);
+                    response.getWriter().write("{\"status\":false,\"message\":\"Autentikasi gagal atau token tidak valid\",\"errors\":null,\"data\":null}");
+                })
+                .accessDeniedHandler((request, response, accessDeniedException) -> {
+                    response.setStatus(jakarta.servlet.http.HttpServletResponse.SC_FORBIDDEN);
+                    response.setContentType(org.springframework.http.MediaType.APPLICATION_JSON_VALUE);
+                    response.getWriter().write("{\"status\":false,\"message\":\"Akses ditolak: role tidak memiliki izin\",\"errors\":null,\"data\":null}");
+                })
+            )
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class).build();
     }
 

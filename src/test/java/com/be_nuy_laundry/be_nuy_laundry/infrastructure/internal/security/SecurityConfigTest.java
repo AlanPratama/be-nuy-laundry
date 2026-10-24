@@ -36,6 +36,7 @@ class SecurityConfigTest {
         HttpSecurity http = mock(HttpSecurity.class, RETURNS_DEEP_STUBS);
         DefaultSecurityFilterChain chain = mock(DefaultSecurityFilterChain.class);
         when(http.csrf(any())).thenReturn(http);
+        when(http.exceptionHandling(any())).thenReturn(http);
         when(http.authorizeHttpRequests(any())).thenAnswer(invocation -> {
             Customizer customizer = invocation.getArgument(0);
             AuthorizeHttpRequestsConfigurer.AuthorizationManagerRequestMatcherRegistry registry =

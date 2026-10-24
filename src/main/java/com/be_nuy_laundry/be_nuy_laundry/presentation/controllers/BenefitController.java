@@ -12,6 +12,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -27,6 +28,7 @@ public class BenefitController {
     private final String SUCCESS_DELETE_DATA_MSG = "SUCCESS";
 
     @PostMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     public ResponseEntity<ApiResponse<BenefitModel>> create(@Valid @RequestBody BenefitRequestDTO request) {
         BenefitModel pkg = request.toModel();
 
@@ -57,6 +59,7 @@ public class BenefitController {
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     public ResponseEntity<ApiResponse<BenefitModel>> update(@PathVariable String id, @Valid @RequestBody BenefitRequestDTO request) {
         BenefitModel pkg = request.toModel();
 
@@ -64,6 +67,7 @@ public class BenefitController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     public ResponseEntity<ApiResponse<Void>> delete(@PathVariable String id) {
         benefitUseCase.deleteBenefit(id);
         return ResponseUtil.success(SUCCESS_DELETE_DATA_MSG, null);
