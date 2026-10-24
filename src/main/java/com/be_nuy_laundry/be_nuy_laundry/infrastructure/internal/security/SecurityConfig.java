@@ -27,6 +27,7 @@ public class SecurityConfig {
             .authorizeHttpRequests((auth) ->
                     auth.requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/api/v1/users/**").permitAll()
+                        .requestMatchers("/actuator/health", "/actuator/health/**").permitAll()
 
 //                    .requestMatchers(HttpMethod.POST, "/api/v1/packages/**")
 //                        .hasAnyRole("ADMIN", "SUPER_ADMIN")

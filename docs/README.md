@@ -28,11 +28,12 @@ Dokumentasi ini dibagi menjadi 11 dokumen tematik independen yang saling terhubu
 
 Kumpulan tiket tugas terstruktur berspesifikasi *high-level* untuk memandu junior developer atau AI agent dalam implementasi dan pengujian sistem:
 
-| Dokumen Tiket | Fokus Tugas | Status |
+| Dokumen Tiket / Laporan | Fokus Tugas | Status |
 | :--- | :--- | :---: |
-| [API Testing Issues](./issues/02-API_TESTING_ISSUES.md) | Tiket uji fungsional & negatif E2E (TEST-01 s/d TEST-06) dengan runner otomatis [scripts/test_runner.py](../scripts/test_runner.py). | ✅ 100% Pass (46/46) |
-| [Unit Testing Issues](./issues/01-UNIT_TEST_ISSUES.md) | Tiket pembuatan unit test JUnit 5 & Mockito (UT-01 s/d UT-15) dengan target 100% coverage. | ✅ 100% Completed |
-| [Performance Evaluation Issues](./issues/03-PERFORMANCE_EVALUATION_ISSUES.md) | Tiket evaluasi performa server, JVM, PostgreSQL N+1/indexing, Redis caching, MinIO throughput, & load testing (PERF-00 s/d PERF-11). | 📋 Ready for Execution |
+| [Performance Evaluation Report](./reports/PERFORMANCE_REPORT.md) | **Laporan hasil evaluasi performa**, eliminasi N+1, index PostgreSQL, HikariCP & k6 load test. | ✅ **100% Completed** |
+| [Performance Evaluation Issues](./issues/03-PERFORMANCE_EVALUATION_ISSUES.md) | Tiket evaluasi performa server, JVM, PostgreSQL N+1/indexing, Redis caching, MinIO throughput, & load testing (PERF-00 s/d PERF-11). | ✅ **100% Completed** |
+| [API Testing Issues](./issues/02-API_TESTING_ISSUES.md) | Tiket uji fungsional & negatif E2E (TEST-01 s/d TEST-06) dengan runner otomatis [scripts/test_runner.py](../scripts/test_runner.py). | ✅ **100% Pass (46/46)** |
+| [Unit Testing Issues](./issues/01-UNIT_TEST_ISSUES.md) | Tiket pembuatan unit test JUnit 5 & Mockito (UT-01 s/d UT-15) dengan 230 unit test. | ✅ **100% Pass (230/230)** |
 | [Project Plan & Service Ports](./PROJECT_PLAN.md) | Prioritas fitur roadmap, status modul, dan port lokal infrastruktur pendukung. | 📌 Active Reference |
 
 ## 🚀 Panduan Ringkas Memulai (Quick Start)
