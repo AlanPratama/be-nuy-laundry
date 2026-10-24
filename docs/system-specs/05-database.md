@@ -6,9 +6,27 @@ Dokumen ini menyediakan spesifikasi lengkap skema basis data PostgreSQL, migrasi
 
 ## 1. Mekanisme Migrasi Skema (Liquibase)
 
-Sistem menggunakan **Liquibase** untuk version control skema basis data. Master changelog dikonfigurasi pada [application.properties](../src/main/resources/application.properties#L31):
+Sistem menggunakan **Liquibase** untuk version control skema basis data. Master changelog dikonfigurasi pada [application.properties](../../src/main/resources/application.properties):
 - File master: `classpath:db/changelog/db.changelog-master.yaml`
 - Seluruh tabel, tipe data kolom, foreign key constraint, dan indeks dibuat secara deterministik tanpa mengandalkan fitur `ddl-auto` bawaan Hibernate (`spring.jpa.hibernate.ddl-auto=none`).
+
+### Katalog File Changelog:
+| No | File Changelog | Deskripsi Perubahan |
+| :---: | :--- | :--- |
+| **001** | `001-create-users.yaml` | Pembuatan tabel `users` dan constraint unik `username`. |
+| **002** | `002-create-customers.yaml` | Pembuatan tabel `customers`. |
+| **003** | `003-create-packages.yaml` | Pembuatan tabel master `packages`. |
+| **004** | `004-create-benefits.yaml` | Pembuatan tabel master `benefits`. |
+| **005** | `005-create-packages_benefits.yaml` | Pembuatan tabel relasi many-to-many `packages_benefits`. |
+| **006** | `006-create-transactions.yaml` | Pembuatan tabel header `transactions`. |
+| **007** | `007-create-transaction_details.yaml` | Pembuatan tabel rincian `transaction_details`. |
+| **008** | `008-create-transaction_files.yaml` | Pembuatan tabel metadata berkas `transaction_files`. |
+| **009** | `009-create-user_sessions.yaml` | Pembuatan tabel sesi login `user_sessions`. |
+| **010** | `010-add-foreign-keys.yaml` | Penambahan relasi foreign key constraint antar tabel. |
+| **011** | `011-add-is-active-users.yaml` | Penambahan kolom `is_active` pada tabel `users`. |
+| **012** | `012-add-photo-packages.yaml` | Penambahan kolom `photo` pada tabel `packages`. |
+| **013** | `013-add-performance-indexes.yaml` | Penambahan 10 indeks B-Tree foreign key & filter performa (PERF-06). |
+| **014** | `014-add-trigram-gin-indexes.yaml` | Pengaktifan ekstensi `pg_trgm` dan indeks GIN trigram `customers(name, address)` (OPT-03). |
 
 ---
 

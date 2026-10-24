@@ -113,10 +113,10 @@ Implementasi teknis terhadap secondary ports (Database, Object Storage, Security
 - **`adapter/`**: Implementasi dari Outbound Port (contoh: `TransactionDatabaseAdapter` mengimplementasikan `TransactionDatabasePort`). Adapter memanggil `TransactionRepository`, melakukan mapping Entity <-> Model via `TransactionMapper`, dan menangani query database.
 
 #### 2. Internal Cache & Security (`infrastructure/internal/`)
-- **`cache/RedisConfig` & `RedisService`**: Koneksi Redis Standalone via Jedis/Lettuce, operasi `set`, `get`, `delete`, dan pengelolaan TTL sesi JWT.
-- **`security/SecurityConfig`**: Konfigurasi `SecurityFilterChain`, CSRF disabled, SessionManagement stateless, CORS configuration, dan `requestMatchers` public vs protected.
-- **`security/JwtAuthenticationFilter`**: Filter per request (`OncePerRequestFilter`) yang mengekstrak `Bearer <token>`, memvalidasi signature & expiration via `JwtUtil`, serta memeriksa keaktifan sesi di database/Redis.
-- **`security/JwtUtil`**: Utility untuk generate, parse, dan validasi token JWT HMAC-SHA256.
+- **`cache/RedisConfig`, `RedisCacheService`, & `SessionCacheService`**: Koneksi Redis Standalone via Spring Data Redis (Jedis/Lettuce), operasi `set`, `get`, `delete`, `deleteByPattern`, pengelolaan TTL sesi JWT, serta generic cache-aside data master (paket & benefit).
+- **`security/SecurityConfig`**: Konfigurasi `SecurityFilterChain`, CSRF disabled, SessionManagement stateless, `requestMatchers` public vs protected, serta kustomisasi `accessDeniedHandler` (HTTP 403) dan `authenticationEntryPoint` (HTTP 401).
+- **`security/JwtAuthFilter`**: Filter per request (`OncePerRequestFilter`) yang mengekstrak `Bearer <token>`, memvalidasi signature & expiration via `JwtService`, serta memeriksa keaktifan sesi di database/Redis.
+- **`security/JwtServiceImpl`**: Implementasi port untuk generate, parse, dan validasi token JWT HMAC-SHA256.
 
 #### 3. External Object Storage (`infrastructure/external/minio`)
 - **`MinioConfig`**: Inisialisasi bean singleton `MinioClient` berbasis endpoint, port, access key, dan secret key dari `application.properties`.

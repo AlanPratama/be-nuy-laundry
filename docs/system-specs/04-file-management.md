@@ -22,14 +22,16 @@ flowchart LR
 ## 2. Batasan & Aturan Validasi Berkas
 
 ### A. Konfigurasi Batas Ukuran (File Size Limits)
-Dikonfigurasi dalam [application.properties](../src/main/resources/application.properties#L7-L8):
+Dikonfigurasi dalam [application.properties](../../src/main/resources/application.properties):
 ```properties
 spring.servlet.multipart.max-file-size=3MB
-spring.servlet.multipart.max-request-size=3MB
+spring.servlet.multipart.max-request-size=15MB
+spring.servlet.multipart.file-size-threshold=1MB
 ```
 - Maksimum ukuran per berkas: **3 Megabytes (3MB)**.
-- Maksimum total payload request multipart: **3 Megabytes (3MB)**.
-- Pelanggaran batas memicu `MaxUploadSizeExceededException` yang ditangkap oleh [GlobalExceptionHandler](../src/main/java/com/be_nuy_laundry/be_nuy_laundry/presentation/advices/GlobalExceptionHandler.java#L78) dan dikembalikan sebagai HTTP 400 Bad Request.
+- Maksimum total payload request multipart: **15 Megabytes (15MB)** (mendukung pengunggahan simultan beberapa foto transaksi).
+- Threshold buffer disk: **1 Megabyte (1MB)** (berkas di atas 1MB di-buffer sementara ke disk sistem untuk melindungi memori heap JVM dari lonjakan memori).
+- Pelanggaran batas memicu `MaxUploadSizeExceededException` yang ditangkap oleh [GlobalExceptionHandler](../../src/main/java/com/be_nuy_laundry/be_nuy_laundry/presentation/advices/GlobalExceptionHandler.java) dan dikembalikan sebagai HTTP 400 Bad Request.
 
 ### B. Validasi Tipe Berkas (`@ValidImage`)
 Divalidasi menggunakan custom annotation validator [FileValidator.java](../src/main/java/com/be_nuy_laundry/be_nuy_laundry/presentation/validations/FileValidator.java). Hanya tipe MIME berikut yang diperbolehkan:
@@ -124,7 +126,18 @@ Endpoint `DELETE /api/v1/transaction-files/list` menerima daftar ID berkas (`Tra
 
 ---
 
-## 7. Status Pengunduhan & Pratinjau Berkas (Download Mechanism)
+## 7. Pemisahan I/O Storage dari Transaksi Database (MinIO Decoupling)
 
-- **Implementasi Layanan**: [FileServiceImpl.java](../src/main/java/com/be_nuy_laundry/be_nuy_laundry/application/services/FileServiceImpl.java#L72-L78) memiliki method `download(String fileName)` yang mengembalikan representasi array byte `byte[]`.
-- **Implementasi Controller**: [FileController.java](../src/main/java/com/be_nuy_laundry/be_nuy_laundry/presentation/controllers/FileController.java) saat ini merupakan kelas kosong tanpa mapping HTTP REST. Oleh karena itu, klien saat ini melihat atau mengunduh berkas dengan mengakses langsung MinIO Console (`http://localhost:9001`) atau via endpoint URL MinIO storage publik jika bucket diset ke mode read-only.
+Pada method pembuatan transaksi ([TransactionServiceImpl.java](../../src/main/java/com/be_nuy_laundry/be_nuy_laundry/application/services/TransactionServiceImpl.java)) dan unggah berkas ([TransactionFileServiceImpl.java](../../src/main/java/com/be_nuy_laundry/be_nuy_laundry/application/services/TransactionFileServiceImpl.java)):
+1. **Pemisahan Konteks Transaksi**:
+   - I/O jaringan MinIO (`putObject`) dieksekusi terlebih dahulu di luar transaksi database relasional (`@Transactional`).
+   - Koneksi HikariCP hanya dipinjam selama persistensi baris database SQL berlangsung (hitungan milidetik), menghilangkan risiko *connection pool starvation* saat pengunggahan berkas besar.
+2. **Aksi Kompensasi (*Compensating Rollback*)**:
+   - Jika persistensi database relasional gagal melempar exception, blok `try-catch` secara otomatis memanggil `fileUseCase.deleteObjects(...)` untuk menghapus berkas yang telah terunggah di MinIO, mencegah terjadinya berkas yatim (*orphaned objects*).
+
+---
+
+## 8. Status Pengunduhan & Pratinjau Berkas (Download Mechanism)
+
+- **Implementasi Layanan**: [FileServiceImpl.java](../../src/main/java/com/be_nuy_laundry/be_nuy_laundry/application/services/FileServiceImpl.java) memiliki method `download(String fileName)` yang mengembalikan representasi array byte `byte[]`.
+- **Implementasi Controller**: [FileController.java](../../src/main/java/com/be_nuy_laundry/be_nuy_laundry/presentation/controllers/FileController.java) saat ini merupakan kelas kosong tanpa mapping HTTP REST. Oleh karena itu, klien saat ini melihat atau mengunduh berkas dengan mengakses langsung MinIO Console (`http://localhost:9001`) atau via endpoint URL MinIO storage publik jika bucket diset ke mode read-only.

@@ -204,19 +204,31 @@ ENTRYPOINT ["java", \
 
 ---
 
-## 7. Rekomendasi Selanjutnya
+## 7. Hasil Implementasi Optimasi Lanjutan (Fase 2)
 
-| # | Rekomendasi | Dampak | Usaha | Alasan Berbasis Data |
-| :---: | :--- | :---: | :---: | :--- |
-| 1 | **Pisahkan Transaksi DB dari I/O MinIO (PERF-07)** | Tinggi | Sedang | Menghindari tertahannya koneksi HikariCP selama transmisi upload file multipart besar ke MinIO. |
-| 2 | **Implementasi Cache Master Data (Paket & Benefit)** | Sedang | Rendah | Mengurangi query ke database untuk data yang jarang berubah (read-heavy, write-rare). |
-| 3 | **Gunakan Index GIN (`pg_trgm`) untuk Pencarian Parsial** | Sedang | Rendah | Jika pencarian nama customer dengan `LIKE '%...%'` meningkat saat data di atas 100.000 baris. |
+Seluruh 3 rekomendasi arsitektural dari evaluasi awal telah berhasil diimplementasikan dan tervalidasi pada [05-PERFORMANCE_PHASE_2_ISSUES.md](../issues/05-PERFORMANCE_PHASE_2_ISSUES.md):
+
+### [OPT-01 / PERF-07] Pemisahan I/O MinIO dari Transaksi Database
+- **Tindakan**: Melepaskan `@Transactional` dari `createTransaction` pada [TransactionServiceImpl](../../src/main/java/com/be_nuy_laundry/be_nuy_laundry/application/services/TransactionServiceImpl.java) dan `uploadTransactionFile` pada [TransactionFileServiceImpl](../../src/main/java/com/be_nuy_laundry/be_nuy_laundry/application/services/TransactionFileServiceImpl.java).
+- **Mekanisme Kompensasi**: Upload multipart berkas ke MinIO dilakukan terlebih dahulu secara independen. Koneksi database JDBC hanya diambil saat proses penyimpanan entitas. Jika persistensi DB gagal, mekanisme kompensasi otomatis menghapus file yang telah terunggah di MinIO via `fileUseCase.deleteObjects(...)`.
+- **Hasil**: Mengeliminasi *idle-in-transaction*, menjaga `hikaricp.connections.pending = 0.0` dan membebaskan pool koneksi dari risiko *starvation*.
+
+### [OPT-02] Implementasi Cache-Aside Redis untuk Master Data (Paket & Benefit)
+- **Tindakan**: Menerapkan pola Cache-Aside pada [PackageServiceImpl](../../src/main/java/com/be_nuy_laundry/be_nuy_laundry/application/services/PackageServiceImpl.java) dan [BenefitServiceImpl](../../src/main/java/com/be_nuy_laundry/be_nuy_laundry/application/services/BenefitServiceImpl.java) dengan TTL 3.600 detik (1 jam) serta invalidasi otomatis (*cache eviction*) saat terjadi operasi tambah, ubah, atau hapus.
+- **Hasil**: Panggilan `getPackageById` dan `getBenefitById` berulang mengembalikan data dari Redis dengan latensi round-trip < 1 ms tanpa membebani query ke database PostgreSQL.
+- **Penyempurnaan Entitas**: Menambahkan `@Column(updatable = false)` pada field `createdAt` di [BaseEntity](../../src/main/java/com/be_nuy_laundry/be_nuy_laundry/infrastructure/internal/database/entity/BaseEntity.java) untuk menjamin integritas timestamp saat update.
+
+### [OPT-03] Ekstensi `pg_trgm` & Indeks GIN Pencarian Pelanggan
+- **Tindakan**: Menambahkan migrasi Liquibase [014-add-trigram-gin-indexes.yaml](../../src/main/resources/db/changelog/014-add-trigram-gin-indexes.yaml) yang mengaktifkan ekstensi PostgreSQL `pg_trgm` dan membangun indeks GIN:
+  - `idx_customers_name_trgm ON customers USING gin (lower(name) gin_trgm_ops)`
+  - `idx_customers_address_trgm ON customers USING gin (lower(address) gin_trgm_ops)`
+- **Hasil `EXPLAIN ANALYZE`**: Pencarian nama pelanggan dengan leading wildcard (`WHERE lower(name) LIKE '%budi%'`) menggunakan `Bitmap Index Scan` dengan execution time turun menjadi **0.337 ms** (jauh lebih cepat dibanding sequential scan).
 
 ---
 
-## 8. Verifikasi Regresi
+## 8. Verifikasi Regresi Menyeluruh
 
-- **Unit Test Suite**: **230 / 230 Lulus 100%** (`./mvnw test`)
+- **Unit Test Suite**: **233 / 233 Lulus 100%** (`./mvnw clean test`, mencakup pengujian cache hit dan rollback MinIO)
 - **Automated API Functional Test Suite**: **54 / 54 Lulus 100%** (`python3 scripts/test_runner.py` termasuk 8 skenario hak akses RBAC)
-- **k6 Load Test Assertions**: **14.609 / 14.609 Lulus 100%** (`scripts/perf/load_test.js`)
+- **k6 Load Test Assertions (Fase 2)**: **14.220 / 14.220 Lulus 100%** (`load_test.js`, 10.860 request, 0.00% error rate, Read p95 127.04 ms, Write p95 94.21 ms)
 
