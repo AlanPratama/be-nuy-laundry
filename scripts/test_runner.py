@@ -90,7 +90,21 @@ def run_curl(method, endpoint, headers=None, data=None, multipart=None):
 
     return code_int, parsed_json, body
 
+def ensure_test_assets():
+    os.makedirs(ASSETS_DIR, exist_ok=True)
+    if not os.path.exists(VALID_IMAGE):
+        with open(VALID_IMAGE, "wb") as f:
+            # 1x1 valid PNG bytes
+            f.write(b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x06\x00\x00\x00\x1f\x15c4\x00\x00\x00\nIDATx\x9cc\x00\x01\x00\x00\x05\x00\x01\r\n-\xb4\x00\x00\x00\x00IEND\xaeB`\x82")
+    if not os.path.exists(INVALID_FILE):
+        with open(INVALID_FILE, "w") as f:
+            f.write("This is a plain text file, not an image.")
+    if not os.path.exists(OVERSIZED_FILE):
+        with open(OVERSIZED_FILE, "wb") as f:
+            f.write(b"0" * (4 * 1024 * 1024))
+
 def main():
+    ensure_test_assets()
     print(f"\n{Colors.BOLD}{Colors.BLUE}========================================================================={Colors.END}")
     print(f"{Colors.BOLD}{Colors.BLUE}   BE NUY LAUNDRY - AUTOMATED API FUNCTIONAL TEST SUITE (E2E)   {Colors.END}")
     print(f"{Colors.BOLD}{Colors.BLUE}========================================================================={Colors.END}\n")

@@ -6,6 +6,7 @@ import com.be_nuy_laundry.be_nuy_laundry.common.exception.DataNotFoundException;
 import com.be_nuy_laundry.be_nuy_laundry.domain.model.BenefitModel;
 import com.be_nuy_laundry.be_nuy_laundry.fixture.TestDataBuilder;
 import com.be_nuy_laundry.be_nuy_laundry.infrastructure.internal.database.filters.BenefitFilter;
+import com.be_nuy_laundry.be_nuy_laundry.infrastructure.internal.cache.RedisCacheService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -29,6 +30,9 @@ class BenefitServiceImplTest {
 
     @Mock
     private BenefitRepositoryPort benefitRepositoryPort;
+
+    @Mock
+    private RedisCacheService redisCacheService;
 
     @InjectMocks
     private BenefitServiceImpl benefitService;
@@ -61,12 +65,27 @@ class BenefitServiceImplTest {
     @DisplayName("givenExistingId_whenGetBenefitById_thenReturnBenefit")
     void givenExistingId_whenGetBenefitById_thenReturnBenefit() {
         BenefitModel benefit = TestDataBuilder.createSampleBenefit();
+        when(redisCacheService.get(anyString(), eq(BenefitModel.class))).thenReturn(Optional.empty());
         when(benefitRepositoryPort.findById(benefit.getId())).thenReturn(Optional.of(benefit));
 
         BenefitModel result = benefitService.getBenefitById(benefit.getId());
 
         assertThat(result).isNotNull();
         assertThat(result.getId()).isEqualTo(benefit.getId());
+        verify(redisCacheService).set(anyString(), eq(benefit), eq(3600L));
+    }
+
+    @Test
+    @DisplayName("givenCachedBenefit_whenGetBenefitById_thenReturnFromCacheWithoutDbQuery")
+    void givenCachedBenefit_whenGetBenefitById_thenReturnFromCacheWithoutDbQuery() {
+        BenefitModel cached = TestDataBuilder.createSampleBenefit();
+        when(redisCacheService.get(anyString(), eq(BenefitModel.class))).thenReturn(Optional.of(cached));
+
+        BenefitModel result = benefitService.getBenefitById(cached.getId());
+
+        assertThat(result).isNotNull();
+        assertThat(result.getId()).isEqualTo(cached.getId());
+        verifyNoInteractions(benefitRepositoryPort);
     }
 
     @Test

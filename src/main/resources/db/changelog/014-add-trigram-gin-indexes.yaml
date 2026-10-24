@@ -1,0 +1,16 @@
+databaseChangeLog:
+  - changeSet:
+      id: 014-1-enable-pg-trgm-extension
+      author: alanpratama
+      changes:
+        - sql:
+            sql: CREATE EXTENSION IF NOT EXISTS pg_trgm;
+
+  - changeSet:
+      id: 014-2-add-gin-trigram-indexes-customers
+      author: alanpratama
+      changes:
+        - sql:
+            sql: CREATE INDEX IF NOT EXISTS idx_customers_name_trgm ON customers USING gin (lower(name) gin_trgm_ops);
+        - sql:
+            sql: CREATE INDEX IF NOT EXISTS idx_customers_address_trgm ON customers USING gin (lower(address) gin_trgm_ops);

@@ -11,6 +11,8 @@ import com.be_nuy_laundry.be_nuy_laundry.common.util.ValueUtil;
 import com.be_nuy_laundry.be_nuy_laundry.domain.model.PackageModel;
 import com.be_nuy_laundry.be_nuy_laundry.infrastructure.internal.database.filters.PackageFilter;
 import com.be_nuy_laundry.be_nuy_laundry.presentation.dtos.request.pkg.PackageRequestDTO;
+import com.be_nuy_laundry.be_nuy_laundry.common.constant.CacheKey;
+import com.be_nuy_laundry.be_nuy_laundry.infrastructure.internal.cache.RedisCacheService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -28,8 +30,8 @@ import java.util.Optional;
 public class PackageServiceImpl implements PackageUseCase{
 
     private final PackageRepositoryPort repositoryPort;
-
     private final FileUseCase fileUseCase;
+    private final RedisCacheService redisCacheService;
 
     @Override
     @Transactional
@@ -50,13 +52,22 @@ public class PackageServiceImpl implements PackageUseCase{
 
         pkg.setPhoto(filePath);
 
-        return repositoryPort.save(pkg);
+        PackageModel saved = repositoryPort.save(pkg);
+        evictCache(saved.getId());
+        return saved;
     }
     
     @Override
     public PackageModel getPackageById(String id) {
-        return repositoryPort.findById(id)
+        Optional<PackageModel> cached = redisCacheService.get(CacheKey.PACKAGE_DETAIL + id, PackageModel.class);
+        if (cached.isPresent()) {
+            return cached.get();
+        }
+
+        PackageModel model = repositoryPort.findById(id)
             .orElseThrow(() -> new DataNotFoundException("Paket tidak ditemukan"));
+        redisCacheService.set(CacheKey.PACKAGE_DETAIL + id, model, 3600);
+        return model;
     }
 
     @Override
@@ -114,7 +125,9 @@ public class PackageServiceImpl implements PackageUseCase{
         existing.setPhoto(filePath);
         existing.setBenefitIds(pkg.getBenefitIds());
 
-        return repositoryPort.save(existing);
+        PackageModel saved = repositoryPort.save(existing);
+        evictCache(id);
+        return saved;
     }
 
     @Override
@@ -126,6 +139,13 @@ public class PackageServiceImpl implements PackageUseCase{
             fileUseCase.delete(existing.getPhoto());
 
         repositoryPort.deleteById(id);
+        evictCache(id);
     }
 
+    private void evictCache(String id) {
+        if (ValueUtil.hasValueString(id)) {
+            redisCacheService.delete(CacheKey.PACKAGE_DETAIL + id);
+        }
+        redisCacheService.deleteByPattern(CacheKey.PACKAGE_PATTERN);
+    }
 }

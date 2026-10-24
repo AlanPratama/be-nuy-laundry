@@ -47,6 +47,8 @@ class TransactionServiceImplTest {
     private TransactionFileUseCase transactionFileUseCase;
     @Mock
     private TransactionDetailUseCase transactionDetailUseCase;
+    @Mock
+    private FileUseCase fileUseCase;
 
     @InjectMocks
     private TransactionServiceImpl transactionService;
@@ -87,6 +89,43 @@ class TransactionServiceImplTest {
         assertThat(response.getId()).isEqualTo("saved-trx-id");
         assertThat(response.getCustomerName()).isEqualTo(customer.getName());
         verify(transactionRepositoryPort).save(any(TransactionModel.class));
+    }
+
+    @Test
+    @DisplayName("givenSaveFails_whenCreateTransaction_thenCleanUpFilesAndRethrow")
+    void givenSaveFails_whenCreateTransaction_thenCleanUpFilesAndRethrow() {
+        PackageModel pkg = TestDataBuilder.createSamplePackage();
+        CustomerModel customer = TestDataBuilder.createSampleCustomer();
+        UserModel user = TestDataBuilder.createSampleUser();
+
+        TransactionDetailRequestDTO detailDTO = new TransactionDetailRequestDTO();
+        detailDTO.setPackageId(pkg.getId());
+        detailDTO.setQuantity(1);
+        detailDTO.setOrderDate(LocalDateTime.now().plusHours(1));
+
+        TransactionRequestDTO request = new TransactionRequestDTO();
+        request.setCustomerId(customer.getId());
+        request.setUserId(user.getId());
+        request.setOrderDate(LocalDateTime.now().plusHours(1));
+        request.setStatus(TransactionStatus.IN_PROGRESS);
+        request.setTransactionDetails(List.of(detailDTO));
+
+        TransactionFileModel uploadedFile = new TransactionFileModel();
+        uploadedFile.setFilePath("transactions/INV-001/file.jpg");
+
+        when(packageUseCase.getPackageByIds(any())).thenReturn(Map.of(pkg.getId(), pkg));
+        when(customerUseCase.getCustomerById(any())).thenReturn(customer);
+        when(userUseCase.getDomainUserById(any())).thenReturn(user);
+        when(transactionFileUseCase.setTransactionFiles(any(), any(), any(), any(), any(), any()))
+                .thenReturn(List.of(uploadedFile));
+        when(transactionRepositoryPort.save(any(TransactionModel.class)))
+                .thenThrow(new RuntimeException("Database error"));
+
+        assertThatThrownBy(() -> transactionService.createTransaction(request))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessage("Database error");
+
+        verify(fileUseCase).deleteObjects(List.of("transactions/INV-001/file.jpg"));
     }
 
     @Test

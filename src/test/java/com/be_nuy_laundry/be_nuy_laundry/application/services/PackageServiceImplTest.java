@@ -9,6 +9,7 @@ import com.be_nuy_laundry.be_nuy_laundry.fixture.TestDataBuilder;
 import com.be_nuy_laundry.be_nuy_laundry.infrastructure.internal.database.entity.enumrated.PackageType;
 import com.be_nuy_laundry.be_nuy_laundry.infrastructure.internal.database.filters.PackageFilter;
 import com.be_nuy_laundry.be_nuy_laundry.presentation.dtos.request.pkg.PackageRequestDTO;
+import com.be_nuy_laundry.be_nuy_laundry.infrastructure.internal.cache.RedisCacheService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -39,6 +40,9 @@ class PackageServiceImplTest {
 
     @Mock
     private FileUseCase fileUseCase;
+
+    @Mock
+    private RedisCacheService redisCacheService;
 
     @InjectMocks
     private PackageServiceImpl packageService;
@@ -105,12 +109,27 @@ class PackageServiceImplTest {
     @DisplayName("givenExistingId_whenGetPackageById_thenReturnPackageModel")
     void givenExistingId_whenGetPackageById_thenReturnPackageModel() {
         PackageModel pkg = TestDataBuilder.createSamplePackage();
+        when(redisCacheService.get(anyString(), eq(PackageModel.class))).thenReturn(Optional.empty());
         when(repositoryPort.findById(pkg.getId())).thenReturn(Optional.of(pkg));
 
         PackageModel result = packageService.getPackageById(pkg.getId());
 
         assertThat(result).isNotNull();
         assertThat(result.getId()).isEqualTo(pkg.getId());
+        verify(redisCacheService).set(anyString(), eq(pkg), eq(3600L));
+    }
+
+    @Test
+    @DisplayName("givenCachedPackage_whenGetPackageById_thenReturnFromCacheWithoutDbQuery")
+    void givenCachedPackage_whenGetPackageById_thenReturnFromCacheWithoutDbQuery() {
+        PackageModel cachedPkg = TestDataBuilder.createSamplePackage();
+        when(redisCacheService.get(anyString(), eq(PackageModel.class))).thenReturn(Optional.of(cachedPkg));
+
+        PackageModel result = packageService.getPackageById(cachedPkg.getId());
+
+        assertThat(result).isNotNull();
+        assertThat(result.getId()).isEqualTo(cachedPkg.getId());
+        verifyNoInteractions(repositoryPort);
     }
 
     @Test
