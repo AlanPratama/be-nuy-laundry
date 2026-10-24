@@ -64,20 +64,20 @@ Seluruh dokumentasi teknis, kamus data, diagram arsitektur, dan tiket pengembang
 
 | Bagian | Dokumen | Ringkasan Isi |
 | :--- | :--- | :--- |
-| **Arsitektur & Domain** | [`docs/01-project-overview.md`](./docs/01-project-overview.md) | Ikhtisar proyek, tujuan bisnis, dan rincian teknologi. |
-| | [`docs/02-architecture.md`](./docs/02-architecture.md) | Hexagonal Architecture, layer boundaries, dan diagram C4. |
-| | [`docs/03-business-flow.md`](./docs/03-business-flow.md) | Alur transaksi, status pesanan, dan kalkulasi tagihan. |
-| **Penyimpanan & Database** | [`docs/04-file-management.md`](./docs/04-file-management.md) | Alur upload/delete berkas MinIO dan validasi gambar. |
-| | [`docs/05-database.md`](./docs/05-database.md) | Skema database, changelog Liquibase, ERD, dan kamus data. |
-| **Implementasi Kode** | [`docs/06-codebase-structure.md`](./docs/06-codebase-structure.md) | Panduan struktur direktori, ports, adapters, dan mappers. |
-| | [`docs/07-api-integration.md`](./docs/07-api-integration.md) | Katalog lengkap REST API endpoint, request DTO, dan response DTO. |
-| | [`docs/08-setup-build-deployment.md`](./docs/08-setup-build-deployment.md) | Panduan setup lokal, konfigurasi env, dan Docker deployment. |
-| | [`docs/09-security-operations.md`](./docs/09-security-operations.md) | Mekanisme keamanan Spring Security, filter JWT, dan Redis session. |
-| | [`docs/10-testing-troubleshooting.md`](./docs/10-testing-troubleshooting.md) | Panduan unit test, mocking, dan troubleshooting error umum. |
-| | [`docs/11-technical-findings.md`](./docs/11-technical-findings.md) | Hasil audit kode teknis, mitigasi bug, dan technical debt. |
-| **Tiket Tugas (Issues)** | [`docs/issues/API_TESTING_ISSUES.md`](./docs/issues/API_TESTING_ISSUES.md) | Spesifikasi 46 test case pengujian API fungsional (TEST-01 s/d TEST-06). |
-| | [`docs/issues/UNIT_TEST_ISSUES.md`](./docs/issues/UNIT_TEST_ISSUES.md) | Roadmap 15 tiket pembuatan unit test (UT-01 s/d UT-15) target 100% coverage. |
-| | [`docs/issues/PERFORMANCE_EVALUATION_ISSUES.md`](./docs/issues/PERFORMANCE_EVALUATION_ISSUES.md) | Tiket evaluasi performa server, database N+1/indeks, cache, dan load testing (PERF-01 s/d PERF-06). |
+| **Arsitektur & Domain** | [`docs/system-specs/01-project-overview.md`](./docs/system-specs/01-project-overview.md) | Ikhtisar proyek, tujuan bisnis, dan rincian teknologi. |
+| | [`docs/system-specs/02-architecture.md`](./docs/system-specs/02-architecture.md) | Hexagonal Architecture, layer boundaries, dan diagram C4. |
+| | [`docs/system-specs/03-business-flow.md`](./docs/system-specs/03-business-flow.md) | Alur transaksi, status pesanan, dan kalkulasi tagihan. |
+| **Penyimpanan & Database** | [`docs/system-specs/04-file-management.md`](./docs/system-specs/04-file-management.md) | Alur upload/delete berkas MinIO dan validasi gambar. |
+| | [`docs/system-specs/05-database.md`](./docs/system-specs/05-database.md) | Skema database, changelog Liquibase, ERD, dan kamus data. |
+| **Implementasi Kode** | [`docs/system-specs/06-codebase-structure.md`](./docs/system-specs/06-codebase-structure.md) | Panduan struktur direktori, ports, adapters, dan mappers. |
+| | [`docs/system-specs/07-api-integration.md`](./docs/system-specs/07-api-integration.md) | Katalog lengkap REST API endpoint, request DTO, dan response DTO. |
+| | [`docs/system-specs/08-setup-build-deployment.md`](./docs/system-specs/08-setup-build-deployment.md) | Panduan setup lokal, konfigurasi env, dan Docker deployment. |
+| | [`docs/system-specs/09-security-operations.md`](./docs/system-specs/09-security-operations.md) | Mekanisme keamanan Spring Security, filter JWT, dan Redis session. |
+| | [`docs/system-specs/10-testing-troubleshooting.md`](./docs/system-specs/10-testing-troubleshooting.md) | Panduan unit test, mocking, dan troubleshooting error umum. |
+| | [`docs/system-specs/11-technical-findings.md`](./docs/system-specs/11-technical-findings.md) | Hasil audit kode teknis, mitigasi bug, dan technical debt. |
+| **Tiket Tugas (Issues)** | [`docs/issues/02-API_TESTING_ISSUES.md`](./docs/issues/02-API_TESTING_ISSUES.md) | Spesifikasi 46 test case pengujian API fungsional (TEST-01 s/d TEST-06). |
+| | [`docs/issues/01-UNIT_TEST_ISSUES.md`](./docs/issues/01-UNIT_TEST_ISSUES.md) | Roadmap 15 tiket pembuatan unit test (UT-01 s/d UT-15) target 100% coverage. |
+| | [`docs/issues/03-PERFORMANCE_EVALUATION_ISSUES.md`](./docs/issues/03-PERFORMANCE_EVALUATION_ISSUES.md) | Tiket evaluasi performa server, database N+1/indeks, cache, dan load testing (PERF-00 s/d PERF-11). |
 | | [`docs/PROJECT_PLAN.md`](./docs/PROJECT_PLAN.md) | Roadmap prioritas fitur modul dan port service pendukung. |
 
 👉 Lihat **[`docs/README.md`](./docs/README.md)** untuk indeks navigasi dokumentasi yang lebih mendalam.
