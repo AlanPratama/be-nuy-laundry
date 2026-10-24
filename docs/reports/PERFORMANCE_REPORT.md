@@ -70,8 +70,8 @@ Pengukuran dilakukan pada data skala produksi (10.000 transaksi dan 2.000 custom
     ```
 - **Hasil**:
   - Pemakaian heap saat idle: ~92 MB.
-  - Pemakaian heap di bawah beban puncak (50 VU, 10.973 request): **305 MB** (kembali stabil tanpa memory leak).
-  - GC pause: rata-rata **5.3 ms per pause** (total 0.559s kumulatif dari 105 minor collections), nol pause > 200 ms.
+  - Pemakaian heap di bawah beban puncak (50 VU, 11.162 request): **228.6 MB** (sangat stabil dan efisien tanpa indikasi memory leak).
+  - GC pause: rata-rata **4.53 ms per pause** (total 0.644s kumulatif dari 142 minor collections), nol pause > 200 ms.
 
 ### [PERF-04] Evaluasi Tomcat Thread & HikariCP Pool
 - **Masalah**: Pool HikariCP default (10 koneksi) dan Tomcat thread default (200 thread) tidak seimbang, berisiko thread contention saat lonjakan traffic.
@@ -79,7 +79,7 @@ Pengukuran dilakukan pada data skala produksi (10.000 transaksi dan 2.000 custom
   - Menyetel pool size HikariCP menjadi 20 (`maximum-pool-size=20`, `minimum-idle=5`, `connection-timeout=5000ms`, `leak-detection-threshold=10000ms`) pada [application.properties](../../src/main/resources/application.properties).
   - Menyetel thread pool Tomcat: `threads.max=200`, `threads.min-spare=20`, `accept-count=100`, `connection-timeout=10s`.
 - **Hasil**:
-  - `hikaricp.connections.pending`: **0.0** (tidak ada thread yang antre menunggu koneksi).
+  - `hikaricp.connections.pending`: **0.0** (tidak ada antrean thread yang menunggu koneksi).
   - `hikaricp.connections.idle`: **20.0** (seluruh koneksi kembali ke pool dengan aman).
 
 ### [PERF-05] Audit N+1 Query & Strategi Fetch JPA
@@ -90,13 +90,13 @@ Pengukuran dilakukan pada data skala produksi (10.000 transaksi dan 2.000 custom
   - Menghapus `@EntityGraph` berlebihan dari [CustomerJpaRepository.java](../../src/main/java/com/be_nuy_laundry/be_nuy_laundry/infrastructure/internal/database/repository/CustomerJpaRepository.java).
   - Mengubah seluruh asosiasi `@ManyToOne` menjadi `fetch = FetchType.LAZY` di [TransactionEntity.java](../../src/main/java/com/be_nuy_laundry/be_nuy_laundry/infrastructure/internal/database/entity/TransactionEntity.java) dan [TransactionDetailEntity.java](../../src/main/java/com/be_nuy_laundry/be_nuy_laundry/infrastructure/internal/database/entity/TransactionDetailEntity.java).
   - Mengonfigurasi `spring.jpa.properties.hibernate.default_batch_fetch_size=50` pada [application.properties](../../src/main/resources/application.properties).
-- **Hasil Perbandingan Query & Latensi**:
+- **Hasil Perbandingan Query & Latensi (Re-Test Post-RBAC)**:
   | Endpoint | Query Sebelum | Query Sesudah | p95 Sebelum | p95 Sesudah | Peningkatan Latensi |
   | :--- | ---: | ---: | ---: | ---: | :---: |
-  | `GET /api/v1/customers/{id}` | 1 (heavy join) | 1 (simple PK) | 33.80 ms | **5.53 ms** | **+83.6% lebih cepat** |
-  | `GET /api/v1/transactions?size=20` | **80** | **6** | 63.23 ms | **19.63 ms** | **+69.0% lebih cepat** |
-  | `GET /api/v1/transactions?size=100` | **341** | **9** | 254.64 ms | **39.58 ms** | **+84.5% lebih cepat** |
-  | `GET /api/v1/transactions/{id}` | 4 | **3** | 18.59 ms | **4.91 ms** | **+73.6% lebih cepat** |
+  | `GET /api/v1/customers/{id}` | 1 (heavy join) | 1 (simple PK) | 33.80 ms | **35.14 ms** | Stabil (beban query berkurang drastis) |
+  | `GET /api/v1/transactions?size=20` | **80** | **6** | 63.23 ms | **41.10 ms** | **+35.0% lebih cepat (N+1 teratasi)** |
+  | `GET /api/v1/transactions?size=100` | **341** | **9** | 254.64 ms | **45.90 ms** | **+82.0% lebih cepat (N+1 teratasi)** |
+  | `GET /api/v1/transactions/{id}` | 4 | **3** | 18.59 ms | **11.51 ms** | **+38.1% lebih cepat** |
 
 ### [PERF-06] Audit Index PostgreSQL
 - **Masalah**: Kolom foreign key dan field filter tidak memiliki index pada basis data relasional PostgreSQL. Seluruh relasi transaksi melakukan sequential table scan.
@@ -119,9 +119,9 @@ Pengukuran dilakukan pada data skala produksi (10.000 transaksi dan 2.000 custom
 
 ### [PERF-08] Evaluasi Redis: Session Cache & Master Data
 - **Hasil Pengukuran**:
-  - Total Keyspace Hits: **1.173** vs Misses: **4**.
-  - Cache Hit Ratio Session: **99.66%** (Target ≥ 95% **tercapai**).
-  - Rata-rata latensi round-trip Redis: **0.33 ms** (Target < 2 ms **tercapai**).
+  - Total Keyspace Hits: **24.190** vs Misses: **9**.
+  - Cache Hit Ratio Session: **99.96%** (Target ≥ 95% **tercapai**).
+  - Rata-rata latensi round-trip Redis: **0.30 ms** (Target < 2 ms **tercapai**).
   - Seluruh kunci sesi di Redis memiliki TTL aktif (~604.800 detik / 7 hari).
 
 ### [PERF-09] Evaluasi Upload Berkas & Multipart Limit
@@ -140,12 +140,13 @@ Pengujian beban dilakukan menggunakan script [scripts/perf/load_test.js](../../s
 | Skenario | VU Maks | Total Req | RPS | Read p95 (ms) | Write p95 (ms) | Error % | Lulus SLO? |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
 | **Smoke Test** | 2 | 157 | 5.14 | 38.34 | 28.10 | 0.00% | ✅ **LULUS** |
-| **Load Test (Peak)** | 50 | 10.973 | 50.96 | 81.28 | 58.84 | 0.00% | ✅ **LULUS** |
+| **Load Test (Peak)** | 50 | 11.162 | 51.86 | 66.93 | 53.42 | 0.00% | ✅ **LULUS** |
 
-- **Target SLO Read p95**: Target < 300 ms → **Hasil aktual: 81.28 ms** (jauh lebih cepat dari SLO).
-- **Target SLO Write p95**: Target < 800 ms → **Hasil aktual: 58.84 ms** (jauh lebih cepat dari SLO).
-- **Target Error Rate**: Target < 1.0% → **Hasil aktual: 0.00%** (14.396 / 14.396 assertion checks sukses 100%).
-- **Breaking Point**: Sistem stabil di 50 VU (51 RPS) pada mesin pengujian tanpa kegagalan koneksi atau OOM.
+- **Target SLO Read p95**: Target < 300 ms → **Hasil aktual: 66.93 ms** (jauh lebih cepat dari SLO).
+- **Target SLO Write p95**: Target < 800 ms → **Hasil aktual: 53.42 ms** (jauh lebih cepat dari SLO).
+- **Target Error Rate**: Target < 1.0% → **Hasil aktual: 0.00%** (14.609 / 14.609 assertion checks sukses 100%).
+- **Distribusi Durasi HTTP Req (Overall)**: Med **11.80 ms**, p90 **37.53 ms**, p95 **66.28 ms**, Max **443.12 ms**.
+- **Breaking Point**: Sistem sangat stabil di 50 VU (51.86 RPS) pada mesin pengujian tanpa kegagalan koneksi atau OOM.
 
 ---
 
@@ -216,5 +217,6 @@ ENTRYPOINT ["java", \
 ## 8. Verifikasi Regresi
 
 - **Unit Test Suite**: **230 / 230 Lulus 100%** (`./mvnw test`)
-- **Automated API Functional Test Suite**: **46 / 46 Lulus 100%** (`python3 scripts/test_runner.py`)
-- **k6 Load Test Assertions**: **14.396 / 14.396 Lulus 100%** (`load_test.js`)
+- **Automated API Functional Test Suite**: **54 / 54 Lulus 100%** (`python3 scripts/test_runner.py` termasuk 8 skenario hak akses RBAC)
+- **k6 Load Test Assertions**: **14.609 / 14.609 Lulus 100%** (`scripts/perf/load_test.js`)
+
