@@ -30,6 +30,7 @@ Kumpulan tiket tugas terstruktur berspesifikasi *high-level* untuk memandu junio
 
 | Dokumen Tiket / Laporan | Fokus Tugas | Status |
 | :--- | :--- | :---: |
+| [Performance Phase 2 Issues](./issues/05-PERFORMANCE_PHASE_2_ISSUES.md) | Tiket optimasi lanjutan: pemisahan I/O MinIO, cache master data paket/benefit, & indeks GIN (OPT-01 s/d OPT-04). | 📋 **Drafted / Ready** |
 | [Performance Evaluation Report](./reports/PERFORMANCE_REPORT.md) | **Laporan hasil evaluasi performa**, eliminasi N+1, index PostgreSQL, HikariCP & k6 load test. | ✅ **100% Completed** |
 | [Performance Evaluation Issues](./issues/03-PERFORMANCE_EVALUATION_ISSUES.md) | Tiket evaluasi performa server, JVM, PostgreSQL N+1/indexing, Redis caching, MinIO throughput, & load testing (PERF-00 s/d PERF-11). | ✅ **100% Completed** |
 | [RBAC & Authorization Issues](./issues/04-RBAC_AUTHORIZATION_ISSUES.md) | Tiket implementasi Role-Based Access Control, proteksi operasi user khusus admin, dan penanganan AccessDenied (RBAC-01 s/d RBAC-05). | ✅ **100% Completed** |
