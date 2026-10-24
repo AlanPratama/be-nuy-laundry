@@ -29,8 +29,7 @@ Dokumentasi ini dibagi menjadi 11 dokumen tematik independen yang saling terhubu
 Kumpulan tiket tugas terstruktur berspesifikasi *high-level* untuk memandu junior developer atau AI agent dalam implementasi dan pengujian sistem:
 
 | Dokumen Tiket / Laporan | Fokus Tugas | Status |
-| :--- | :--- | :---: |
-| [API JSON Collection Issues](./issues/06-API_COLLECTION_ISSUES.md) | Tiket penyusunan koleksi JSON Postman v2.1.0 & environment lokal untuk seluruh endpoint (COL-01 s/d COL-05). | 📋 **To Do (Ready for Dev)** |
+| [API JSON Collection Issues](./issues/06-API_COLLECTION_ISSUES.md) | Tiket penyusunan koleksi JSON Postman v2.1.0 & environment lokal untuk seluruh endpoint (COL-01 s/d COL-05). | ✅ **100% Completed (36/36 Passed)** |
 | [Performance Phase 2 Issues](./issues/05-PERFORMANCE_PHASE_2_ISSUES.md) | Tiket optimasi lanjutan: pemisahan I/O MinIO, cache master data paket/benefit, & indeks GIN (OPT-01 s/d OPT-04). | ✅ **100% Completed** |
 | [Performance Evaluation Report](./reports/PERFORMANCE_REPORT.md) | **Laporan hasil evaluasi performa**, eliminasi N+1, index PostgreSQL, HikariCP & k6 load test. | ✅ **100% Completed** |
 | [Performance Evaluation Issues](./issues/03-PERFORMANCE_EVALUATION_ISSUES.md) | Tiket evaluasi performa server, JVM, PostgreSQL N+1/indexing, Redis caching, MinIO throughput, & load testing (PERF-00 s/d PERF-11). | ✅ **100% Completed** |

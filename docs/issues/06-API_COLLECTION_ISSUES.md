@@ -144,8 +144,8 @@ Menyiapkan direktori penyimpanan `postman/` pada root proyek beserta file enviro
 3. Buat file `postman/README.md` yang memuat panduan cara mengimpor koleksi ke Postman Desktop / Web serta cara menjalankan pengujian dengan Newman.
 
 #### ✅ Kriteria Lolos (Definition of Done)
-- [ ] File `postman/be-nuy-laundry.postman_environment.json` valid secara sintaks JSON.
-- [ ] Berhasil diimpor ke aplikasi Postman tanpa peringatan schema mismatch.
+- [x] File `postman/be-nuy-laundry.postman_environment.json` valid secara sintaks JSON.
+- [x] Berhasil diimpor ke aplikasi Postman tanpa peringatan schema mismatch.
 
 ---
 
@@ -182,8 +182,8 @@ Memastikan pengguna tidak perlu menyalin token JWT atau ID entitas secara manual
 4. Di level root Collection, tambahkan konfigurasi Authorization tipe `Bearer Token` dengan nilai `{{adminToken}}` (dapat di-override di level request untuk pengujian role staf).
 
 #### ✅ Kriteria Lolos (Definition of Done)
-- [ ] Menjalankan request `Login as Admin` otomatis mengisi variabel `adminToken` di environment.
-- [ ] Menjalankan request berikutnya otomatis menggunakan token yang tersimpan tanpa konfigurasi manual.
+- [x] Menjalankan request `Login as Admin` otomatis mengisi variabel `adminToken` di environment.
+- [x] Menjalankan request berikutnya otomatis menggunakan token yang tersimpan tanpa konfigurasi manual.
 
 ---
 
@@ -213,8 +213,8 @@ Menyusun seluruh request untuk data master dan entitas bisnis dasar lengkap deng
    - CRUD lengkap untuk `/api/v1/benefits/**`. Mutasi diproteksi token admin, pembacaan dapat menggunakan token staf.
 
 #### ✅ Kriteria Lolos (Definition of Done)
-- [ ] Seluruh endpoint CRUD modul 01 s/d 05 terdaftar dengan method dan URL yang sesuai.
-- [ ] Request negatif role staf mengembalikan status HTTP 403 Forbidden dengan pesan standar: `"Akses ditolak: role tidak memiliki izin"`.
+- [x] Seluruh endpoint CRUD modul 01 s/d 05 terdaftar dengan method dan URL yang sesuai.
+- [x] Request negatif role staf mengembalikan status HTTP 403 Forbidden dengan pesan standar: `"Akses ditolak: role tidak memiliki izin"`.
 
 ---
 
@@ -259,8 +259,8 @@ Menyusun alur transaksi laundry lengkap dari pembuatan order, pelampiran berkas 
    - `Health Check`: `GET /actuator/health` (Tanpa otorisasi).
 
 #### ✅ Kriteria Lolos (Definition of Done)
-- [ ] Alur pembuatan transaksi hingga update status pengerjaan dapat dieksekusi secara mulus menggunakan variabel dinamis.
-- [ ] Part `request` pada request multipart diatur dengan eksplisit header `Content-Type: application/json`.
+- [x] Alur pembuatan transaksi hingga update status pengerjaan dapat dieksekusi secara mulus menggunakan variabel dinamis.
+- [x] Part `request` pada request multipart diatur dengan eksplisit header `Content-Type: application/json`.
 
 ---
 
@@ -304,8 +304,8 @@ Menambahkan pengujian otomatis (*test assertions*) pada setiap request di collec
    ```
 
 #### ✅ Kriteria Lolos (Definition of Done)
-- [ ] Seluruh request di dalam collection memiliki minimal 2 test assertions (status code dan envelope structure).
-- [ ] Newman runner berhasil menjalankan koleksi terhadap server lokal dengan status **All Tests Passed (0 Failures)**.
+- [x] Seluruh request di dalam collection memiliki minimal 2 test assertions (status code dan envelope structure).
+- [x] Newman runner berhasil menjalankan koleksi terhadap server lokal dengan status **All Tests Passed (0 Failures)**.
 
 ---
 
