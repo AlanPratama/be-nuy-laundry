@@ -1,0 +1,84 @@
+databaseChangeLog:
+  - changeSet:
+      id: 013-1-add-transactions-indexes
+      author: alanpratama
+      changes:
+        - createIndex:
+            tableName: transactions
+            indexName: idx_transactions_customer_id
+            columns:
+              - column:
+                  name: customer_id
+        - createIndex:
+            tableName: transactions
+            indexName: idx_transactions_user_id
+            columns:
+              - column:
+                  name: user_id
+        - createIndex:
+            tableName: transactions
+            indexName: idx_transactions_invoice_no
+            columns:
+              - column:
+                  name: invoice_no
+        - createIndex:
+            tableName: transactions
+            indexName: idx_transactions_status_order_date
+            columns:
+              - column:
+                  name: status
+              - column:
+                  name: order_date
+
+  - changeSet:
+      id: 013-2-add-transaction-details-indexes
+      author: alanpratama
+      changes:
+        - createIndex:
+            tableName: transaction_details
+            indexName: idx_transaction_details_transaction_id
+            columns:
+              - column:
+                  name: transaction_id
+        - createIndex:
+            tableName: transaction_details
+            indexName: idx_transaction_details_package_id
+            columns:
+              - column:
+                  name: package_id
+
+  - changeSet:
+      id: 013-3-add-transaction-files-indexes
+      author: alanpratama
+      changes:
+        - createIndex:
+            tableName: transaction_files
+            indexName: idx_transaction_files_transaction_id
+            columns:
+              - column:
+                  name: transaction_id
+
+  - changeSet:
+      id: 013-4-add-user-sessions-and-relations-indexes
+      author: alanpratama
+      changes:
+        - createIndex:
+            tableName: user_sessions
+            indexName: idx_user_sessions_user_id
+            columns:
+              - column:
+                  name: user_id
+        - createIndex:
+            tableName: packages_benefits
+            indexName: idx_packages_benefits_pkg_bnf
+            columns:
+              - column:
+                  name: package_id
+              - column:
+                  name: benefit_id
+        - createIndex:
+            tableName: customers
+            indexName: idx_customers_phone
+            columns:
+              - column:
+                  name: phone

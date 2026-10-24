@@ -2,7 +2,6 @@ package com.be_nuy_laundry.be_nuy_laundry.infrastructure.internal.database.mappe
 
 import com.be_nuy_laundry.be_nuy_laundry.domain.model.TransactionDetailModel;
 import com.be_nuy_laundry.be_nuy_laundry.infrastructure.internal.database.entity.TransactionDetailEntity;
-import org.hibernate.Hibernate;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -55,10 +54,10 @@ public class TransactionDetailMapper {
         model.setCreatedAt(entity.getCreatedAt());
         model.setUpdatedAt(entity.getUpdatedAt());
 
-        if (Hibernate.isInitialized(entity.getPkg()) && entity.getPkg() != null)
+        if (entity.getPkg() != null)
             model.setPackageId(entity.getPkg().getId());
 
-        if (Hibernate.isInitialized(entity.getTransaction()) && entity.getTransaction() != null)
+        if (entity.getTransaction() != null)
             model.setTransactionId(entity.getTransaction().getId());
 
         return model;

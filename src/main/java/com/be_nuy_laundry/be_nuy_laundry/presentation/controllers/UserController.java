@@ -16,6 +16,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -35,6 +36,7 @@ public class UserController {
     private final String SUCCESS_RESET_PASSWORD_MSG = "SUCCESS";
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     public ResponseEntity<ApiResponse<UserResponseDTO>> create(
             @RequestPart("request") @Valid UserCreateRequestDTO request,
             @RequestPart(value = "file", required = false) @ValidImage(required = false) MultipartFile file
@@ -46,11 +48,13 @@ public class UserController {
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     public ResponseEntity<ApiResponse<UserResponseDTO>> getById(@PathVariable String id) {
         return ResponseUtil.success(SUCCESS_RETRIEVE_DATA_MSG, userUseCase.getUserById(id));
     }
 
     @GetMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     public ResponseEntity<ApiResponse<PageResponse<UserResponseDTO>>> getAll(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
@@ -68,6 +72,7 @@ public class UserController {
     }
 
     @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     public ResponseEntity<ApiResponse<UserResponseDTO>> update(
             @PathVariable String id,
             @RequestPart("request") @Valid UserUpdateRequestDTO request,
@@ -79,12 +84,14 @@ public class UserController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     public ResponseEntity<ApiResponse<Void>> delete(@PathVariable String id) {
         userUseCase.deleteUser(id);
         return ResponseUtil.success(SUCCESS_DELETE_DATA_MSG, null);
     }
 
     @PatchMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     public ResponseEntity<ApiResponse<UserResponseDTO>> resetPassword(@PathVariable String id, @Valid @RequestBody UserResetPasswordRequestDTO request) {
         return ResponseUtil.success(SUCCESS_RESET_PASSWORD_MSG, userUseCase.resetPassword(id, request));
     }

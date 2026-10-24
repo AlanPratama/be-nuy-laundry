@@ -22,6 +22,7 @@ public class BaseEntity {
     private String id;
 
     @CreationTimestamp
+    @jakarta.persistence.Column(updatable = false)
     private LocalDateTime createdAt;
 
     @UpdateTimestamp

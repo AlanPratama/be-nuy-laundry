@@ -57,15 +57,21 @@ Seluruh endpoint pada aplikasi ini mengembalikan struktur JSON terstandarisasi m
 
 ## 2. Inventaris Lengkap Endpoint API
 
-Berdasarkan konfigurasi aktual pada `SecurityConfig.java` dan `@PreAuthorize`:
-- **Publik (`permitAll`)**: `/api/auth/**`, `/api/v1/users/**` (Lihat catatan temuan keamanan pada dokumen 11).
-- **Perlu Autentikasi (`authenticated`)**: Semua endpoint selain auth dan users.
-- **Role-based (`ADMIN`, `SUPER_ADMIN`)**: Khusus `POST /api/v1/packages`, `PUT /api/v1/packages/{id}`, `DELETE /api/v1/packages/{id}`.
+Berdasarkan konfigurasi aktual pada `SecurityConfig.java` dan anotasi method security `@PreAuthorize`:
+- **Publik (`permitAll`)**: `/api/auth/**` (khususnya login & refresh-token) dan `/actuator/health`.
+- **Perlu Autentikasi (`authenticated`)**: Seluruh endpoint aplikasi mewajibkan header `Authorization: Bearer <token>`.
+- **Role-based (`ADMIN`, `SUPER_ADMIN`)**:
+  - Seluruh manajemen pengguna: `POST`, `GET`, `PUT`, `DELETE`, `PATCH` pada `/api/v1/users/**`.
+  - Operasi mutasi paket laundry: `POST`, `PUT`, `DELETE` pada `/api/v1/packages/**`.
+  - Operasi mutasi benefit laundry: `POST`, `PUT`, `DELETE` pada `/api/v1/benefits/**`.
+- **Role `STAFF`**: Dibatasi hanya untuk operasi operasional harian (Customers, Transactions, Transaction Files, dan Read-only Packages & Benefits). Mencoba mengakses endpoint mutasi master atau manajemen user akan menghasilkan **HTTP 403 Forbidden**.
 
 | Modul | Method | URL Path | Role / Izin Akses | Fungsi & Deskripsi |
 | :--- | :--- | :--- | :--- | :--- |
 | **Auth** | `POST` | `/api/auth/login` | Publik | Otentikasi user & generate Bearer JWT |
 | **Auth** | `POST` | `/api/auth/refresh-token` | Publik | Refresh token kedaluwarsa |
+| **Auth** | `POST` | `/api/auth/logout` | Authenticated (Bearer) | Invalidation / cabut sesi aktif di DB & Redis |
+| **Auth** | `GET` | `/api/auth/me`, `/api/auth/authenticated-user` | Authenticated (Bearer) | Ambil profil pengguna yang sedang login |
 | **Customers**| `POST` | `/api/v1/customers` | Authenticated | Tambah data pelanggan baru |
 | **Customers**| `GET` | `/api/v1/customers/{id}` | Authenticated | Ambil detail pelanggan berdasarkan ID |
 | **Customers**| `GET` | `/api/v1/customers` | Authenticated | Ambil daftar pelanggan berhalaman & filter |
@@ -73,15 +79,15 @@ Berdasarkan konfigurasi aktual pada `SecurityConfig.java` dan `@PreAuthorize`:
 | **Customers**| `DELETE` | `/api/v1/customers/{id}` | Authenticated | Hapus data pelanggan |
 | **Packages** | `POST` | `/api/v1/packages` | `ADMIN`, `SUPER_ADMIN` | Tambah paket laundry (Multipart: request + file) |
 | **Packages** | `GET` | `/api/v1/packages/{id}` | Authenticated | Ambil detail paket laundry |
-| **Packages** | `GET` | `/api/v1/packages/{id}/benefit` | Authenticated | Ambil paket berdasarkan ID benefit (*Catatan: bug parameter*) |
+| **Packages** | `GET` | `/api/v1/packages/{benefitId}/benefit` | Authenticated | Ambil paket berdasarkan ID benefit |
 | **Packages** | `GET` | `/api/v1/packages` | Authenticated | Ambil daftar paket berhalaman & filter |
 | **Packages** | `PUT` | `/api/v1/packages/{id}` | `ADMIN`, `SUPER_ADMIN` | Perbarui data paket laundry (Multipart) |
 | **Packages** | `DELETE` | `/api/v1/packages/{id}` | `ADMIN`, `SUPER_ADMIN` | Hapus paket laundry |
-| **Benefits** | `POST` | `/api/v1/benefits` | Authenticated | Tambah master benefit baru |
+| **Benefits** | `POST` | `/api/v1/benefits` | `ADMIN`, `SUPER_ADMIN` | Tambah master benefit baru |
 | **Benefits** | `GET` | `/api/v1/benefits/{id}` | Authenticated | Ambil detail benefit |
 | **Benefits** | `GET` | `/api/v1/benefits` | Authenticated | Ambil daftar benefit berhalaman & filter |
-| **Benefits** | `PUT` | `/api/v1/benefits/{id}` | Authenticated | Perbarui data benefit |
-| **Benefits** | `DELETE` | `/api/v1/benefits/{id}` | Authenticated | Hapus benefit |
+| **Benefits** | `PUT` | `/api/v1/benefits/{id}` | `ADMIN`, `SUPER_ADMIN` | Perbarui data benefit |
+| **Benefits** | `DELETE` | `/api/v1/benefits/{id}` | `ADMIN`, `SUPER_ADMIN` | Hapus benefit |
 | **Transactions**| `POST` | `/api/v1/transactions` | Authenticated | Buat transaksi laundry baru (Multipart: request + foto) |
 | **Transactions**| `GET` | `/api/v1/transactions/{id}` | Authenticated | Ambil detail transaksi laundry & detail item |
 | **Transactions**| `GET` | `/api/v1/transactions` | Authenticated | Ambil daftar transaksi berhalaman & filter |
@@ -91,12 +97,12 @@ Berdasarkan konfigurasi aktual pada `SecurityConfig.java` dan `@PreAuthorize`:
 | **Trans. Files** | `POST` | `/api/v1/transaction-files` | Authenticated | Upload file/bukti tambahan transaksi |
 | **Trans. Files** | `DELETE` | `/api/v1/transaction-files/{id}` | Authenticated | Hapus satu file transaksi berdasarkan ID |
 | **Trans. Files** | `DELETE` | `/api/v1/transaction-files/list` | Authenticated | Hapus sekumpulan file transaksi sekaligus (bulk) |
-| **Users** | `POST` | `/api/v1/users` | Publik *(Konfigurasi saat ini)* | Registrasi user / staf baru (Multipart) |
-| **Users** | `GET` | `/api/v1/users/{id}` | Publik *(Konfigurasi saat ini)* | Ambil data user |
-| **Users** | `GET` | `/api/v1/users` | Publik *(Konfigurasi saat ini)* | Ambil daftar user berhalaman |
-| **Users** | `PUT` | `/api/v1/users/{id}` | Publik *(Konfigurasi saat ini)* | Perbarui profil user (Multipart) |
-| **Users** | `DELETE` | `/api/v1/users/{id}` | Publik *(Konfigurasi saat ini)* | Hapus user |
-| **Users** | `PATCH` | `/api/v1/users/{id}` | Publik *(Konfigurasi saat ini)* | Reset password user |
+| **Users** | `POST` | `/api/v1/users` | `ADMIN`, `SUPER_ADMIN` | Registrasi user / staf baru (Multipart) |
+| **Users** | `GET` | `/api/v1/users/{id}` | `ADMIN`, `SUPER_ADMIN` | Ambil data user berdasarkan ID |
+| **Users** | `GET` | `/api/v1/users` | `ADMIN`, `SUPER_ADMIN` | Ambil daftar user berhalaman & filter nama |
+| **Users** | `PUT` | `/api/v1/users/{id}` | `ADMIN`, `SUPER_ADMIN` | Perbarui profil user (Multipart) |
+| **Users** | `DELETE` | `/api/v1/users/{id}` | `ADMIN`, `SUPER_ADMIN` | Hapus user berdasarkan ID |
+| **Users** | `PATCH` | `/api/v1/users/{id}` | `ADMIN`, `SUPER_ADMIN` | Reset password user |
 
 ---
 
@@ -241,12 +247,19 @@ Berdasarkan konfigurasi aktual pada `SecurityConfig.java` dan `@PreAuthorize`:
 - **Host**: `localhost:9000` (atau `minio:9000` di dalam Docker network).
 - **Bucket**: `nuy-laundry` (diperiksa/dibuat otomatis saat bootstrap via `makeBucket`).
 - **Timeout**: Default OkHttp client timeout (10 detik connect, 10 detik write, 10 detik read).
-- **Mekanisme Retry / Circuit Breaker**: Tidak ada library circuit breaker (seperti Resilience4j) yang terpasang pada repository. Operasi I/O ditangani secara synchronous langsung di thread servlet.
+- **Arsitektur I/O & Compensating Rollback**:
+  - Operasi upload fisik ke MinIO dieksekusi di luar batasan `@Transactional` database (terpisah dari transaksi SQL) pada `TransactionServiceImpl` dan `TransactionFileServiceImpl`.
+  - Jika terjadi kegagalan saat persistensi metadata ke PostgreSQL, sistem memicu *compensating rollback* dengan menghapus objek yang sempat diunggah ke MinIO via `fileUseCase.deleteObjects(...)` guna mencegah file yatim (*orphan files*).
+  - Buffer memori multipart diatur dengan `file-size-threshold: 1MB` dan batas upload 15MB untuk menjaga efisiensi RAM server.
 
-### B. Redis Cache Sesi
+### B. Redis Cache (Sesi & Master Data)
 - **Protokol**: Redis Serialization Protocol (RESP) via Spring Data Redis (Jedis/Lettuce).
 - **Host**: `localhost:6379` (atau `redis:6379`).
-- **Fungsi**: Menyimpan sesi token aktif dengan key format `session:<userId>` atau `token:<jwt>` dengan Time-To-Live (TTL) yang sinkron dengan masa berlaku JWT.
+- **Cakupan & Key Format**:
+  1. **User Session**: Menyimpan sesi token aktif dengan key format `session:<userId>` atau `token:<jwt>` (TTL default 7 hari / sinkron masa berlaku JWT).
+  2. **Package Master Cache**: Menyimpan detail dan daftar paket laundry dengan key `package:<id>`, `package:benefit:<benefitId>`, dan `package:list:*` (TTL 3600 detik). Otomatis di-evict saat ada mutasi paket.
+  3. **Benefit Master Cache**: Menyimpan detail dan daftar benefit dengan key `benefit:<id>` dan `benefit:list:*` (TTL 3600 detik). Otomatis di-evict saat ada mutasi benefit.
+- **Pattern Eviction**: Mendukung pembersihan massal via `RedisCacheService.deleteByPattern(pattern)`.
 
 ### C. RabbitMQ Message Broker
 - **Status Faktual**: **Tidak Terintegrasi pada Source Code**.

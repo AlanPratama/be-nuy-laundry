@@ -36,9 +36,9 @@ public class TransactionServiceImpl implements TransactionUseCase {
     private final UserUseCase userUseCase;
     private final TransactionFileUseCase transactionFileUseCase;
     private final TransactionDetailUseCase transactionDetailUseCase;
+    private final FileUseCase fileUseCase;
 
     @Override
-    @Transactional
     public TransactionResponseDTO createTransaction(TransactionRequestDTO transactionRequest) {
         String invoiceNo = TransactionNumberGenerator.generateInvoiceNo();
         List<String> packageIds = transactionRequest.getTransactionDetails().stream().map(TransactionDetailRequestDTO::getPackageId).toList();
@@ -79,6 +79,7 @@ public class TransactionServiceImpl implements TransactionUseCase {
         List<MultipartFile> conditionAfterFiles = transactionRequest.getConditionAfterFiles();
         List<MultipartFile> otherFiles = transactionRequest.getOtherFiles();
 
+        // FASE 1: I/O Jaringan ke MinIO (Di luar transaksi DB)
         List<TransactionFileModel> transactionFileModels = transactionFileUseCase.setTransactionFiles(
                 invoiceNo, paymentReceiptFile,
                 invoiceDocumentFile, conditionBeforeFiles,
@@ -98,8 +99,28 @@ public class TransactionServiceImpl implements TransactionUseCase {
         transactionModel.setTransactionDetails(transactionDetailModels);
         transactionModel.setTransactionFiles(transactionFileModels);
 
-        return TransactionMapper.mapDomainToResponse(
-                transactionRepositoryPort.save(transactionModel));
+        // FASE 2: Transaksi DB singkat dengan penanganan kompensasi jika gagal
+        try {
+            return TransactionMapper.mapDomainToResponse(
+                    transactionRepositoryPort.save(transactionModel));
+        } catch (Exception e) {
+            cleanupFiles(transactionFileModels);
+            throw e;
+        }
+    }
+
+    private void cleanupFiles(List<TransactionFileModel> files) {
+        if (files == null || files.isEmpty()) return;
+        List<String> filePaths = files.stream()
+                .map(TransactionFileModel::getFilePath)
+                .filter(ValueUtil::hasValueString)
+                .toList();
+        if (!filePaths.isEmpty()) {
+            try {
+                fileUseCase.deleteObjects(filePaths);
+            } catch (Exception ignored) {
+            }
+        }
     }
 
     @Override

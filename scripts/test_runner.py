@@ -90,7 +90,21 @@ def run_curl(method, endpoint, headers=None, data=None, multipart=None):
 
     return code_int, parsed_json, body
 
+def ensure_test_assets():
+    os.makedirs(ASSETS_DIR, exist_ok=True)
+    if not os.path.exists(VALID_IMAGE):
+        with open(VALID_IMAGE, "wb") as f:
+            # 1x1 valid PNG bytes
+            f.write(b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x06\x00\x00\x00\x1f\x15c4\x00\x00\x00\nIDATx\x9cc\x00\x01\x00\x00\x05\x00\x01\r\n-\xb4\x00\x00\x00\x00IEND\xaeB`\x82")
+    if not os.path.exists(INVALID_FILE):
+        with open(INVALID_FILE, "w") as f:
+            f.write("This is a plain text file, not an image.")
+    if not os.path.exists(OVERSIZED_FILE):
+        with open(OVERSIZED_FILE, "wb") as f:
+            f.write(b"0" * (4 * 1024 * 1024))
+
 def main():
+    ensure_test_assets()
     print(f"\n{Colors.BOLD}{Colors.BLUE}========================================================================={Colors.END}")
     print(f"{Colors.BOLD}{Colors.BLUE}   BE NUY LAUNDRY - AUTOMATED API FUNCTIONAL TEST SUITE (E2E)   {Colors.END}")
     print(f"{Colors.BOLD}{Colors.BLUE}========================================================================={Colors.END}\n")
@@ -103,6 +117,12 @@ def main():
     # PRE-SETUP: Buat Akun Admin untuk Testing
     # =========================================================================
     print(f"{Colors.BOLD}[SETUP] Membuat akun Admin untuk pengujian ({admin_username})...{Colors.END}")
+    # Login dulu dengan bootstrap admin untuk mendapatkan token pembuatan user
+    code_boot, res_boot, _ = run_curl("POST", "/api/auth/login", data={"username": "perf_admin", "password": "Password123!"})
+    boot_header = {}
+    if code_boot == 200 and res_boot and res_boot.get("data"):
+        boot_header = {"Authorization": f"Bearer {res_boot['data']['accessToken']}"}
+
     setup_req = {
         "name": "Super Admin Test",
         "username": admin_username,
@@ -111,7 +131,7 @@ def main():
         "address": "Jakarta Barat",
         "role": "SUPER_ADMIN"
     }
-    code, json_res, raw = run_curl("POST", "/api/v1/users", multipart={"request": setup_req})
+    code, json_res, raw = run_curl("POST", "/api/v1/users", headers=boot_header, multipart={"request": setup_req})
     if code not in [200, 201]:
         print(f"{Colors.RED}Setup user gagal ({code}): {raw}{Colors.END}")
         sys.exit(1)
@@ -231,7 +251,7 @@ def main():
     }
 
     # TC-USER-01: Tambah User Baru Berhasil dengan Foto (Multipart)
-    code, res, _ = run_curl("POST", "/api/v1/users", multipart={
+    code, res, _ = run_curl("POST", "/api/v1/users", headers=auth_header, multipart={
         "request": user_req,
         "file": (VALID_IMAGE, "image/png")
     })
@@ -240,15 +260,15 @@ def main():
 
     # TC-USER-02: Tambah User Gagal - Password Lemah
     weak_user_req = {"name": "Weak", "username": f"weak_{ts}", "password": "123", "phone": "08123"}
-    code, res, _ = run_curl("POST", "/api/v1/users", multipart={"request": weak_user_req})
+    code, res, _ = run_curl("POST", "/api/v1/users", headers=auth_header, multipart={"request": weak_user_req})
     log_test("TC-USER-02", "Tambah User Gagal - Format Password Lemah", code == 400, code, 400)
 
     # TC-USER-03: Tambah User Gagal - Username Duplikat
-    code, res, _ = run_curl("POST", "/api/v1/users", multipart={"request": user_req})
+    code, res, _ = run_curl("POST", "/api/v1/users", headers=auth_header, multipart={"request": user_req})
     log_test("TC-USER-03", "Tambah User Gagal - Username Duplikat", code == 409, code, 409)
 
     # TC-USER-04: Ambil User by ID
-    code, res, _ = run_curl("GET", f"/api/v1/users/{created_user_id}")
+    code, res, _ = run_curl("GET", f"/api/v1/users/{created_user_id}", headers=auth_header)
     log_test("TC-USER-04", "Ambil Data User by ID", (code == 200 and res.get("data", {}).get("username") == test_user_uname), code, 200)
 
     # TC-USER-05: Update User Profile & Foto
@@ -259,7 +279,7 @@ def main():
         "address": "Jakarta Baru",
         "role": "ADMIN"
     }
-    code, res, _ = run_curl("PUT", f"/api/v1/users/{created_user_id}", multipart={
+    code, res, _ = run_curl("PUT", f"/api/v1/users/{created_user_id}", headers=auth_header, multipart={
         "request": user_update_req,
         "file": (VALID_IMAGE, "image/png")
     })
@@ -267,20 +287,20 @@ def main():
 
     # TC-USER-06: Reset Password Berhasil
     reset_req = {"oldPassword": "Password123!", "newPassword": "PasswordBaru456@"}
-    code, res, _ = run_curl("PATCH", f"/api/v1/users/{created_user_id}", data=reset_req)
+    code, res, _ = run_curl("PATCH", f"/api/v1/users/{created_user_id}", headers=auth_header, data=reset_req)
     # Verifikasi login dengan password baru
     login_new_code, _, _ = run_curl("POST", "/api/auth/login", data={"username": test_user_uname, "password": "PasswordBaru456@"})
     log_test("TC-USER-06", "Reset Password Berhasil & Verifikasi Login", (code == 200 and login_new_code == 200), code, 200)
 
     # TC-USER-07: Reset Password Gagal - Password Lama Salah
-    code, res, _ = run_curl("PATCH", f"/api/v1/users/{created_user_id}", data={"oldPassword": "WrongPassword999!", "newPassword": "AnotherPassword123!"})
+    code, res, _ = run_curl("PATCH", f"/api/v1/users/{created_user_id}", headers=auth_header, data={"oldPassword": "WrongPassword999!", "newPassword": "AnotherPassword123!"})
     log_test("TC-USER-07", "Reset Password Gagal - Password Lama Salah", code == 403, code, 403)
 
     # TC-USER-08: Hapus User
-    _, temp_u_res, _ = run_curl("POST", "/api/v1/users", multipart={"request": {"name": "Temp", "username": f"del_{ts}", "password": "Password123!", "phone": "08111"}})
-    temp_u_id = temp_u_res.get("data", {}).get("id")
-    code, _, _ = run_curl("DELETE", f"/api/v1/users/{temp_u_id}")
-    verify_u_code, _, _ = run_curl("GET", f"/api/v1/users/{temp_u_id}")
+    _, temp_u_res, _ = run_curl("POST", "/api/v1/users", headers=auth_header, multipart={"request": {"name": "Temp", "username": f"del_{ts}", "password": "Password123!", "phone": "08111"}})
+    temp_u_id = temp_u_res.get("data", {}).get("id") if temp_u_res and temp_u_res.get("data") else None
+    code, _, _ = run_curl("DELETE", f"/api/v1/users/{temp_u_id}", headers=auth_header)
+    verify_u_code, _, _ = run_curl("GET", f"/api/v1/users/{temp_u_id}", headers=auth_header)
     log_test("TC-USER-08", "Hapus Data User (Delete & Verify 404)", (code == 200 and verify_u_code == 404), code, 200)
 
     # =========================================================================
@@ -500,6 +520,72 @@ def main():
     # TC-FILE-07: Hapus Berkas Gagal - File ID Tidak Ditemukan
     code, res, _ = run_curl("DELETE", "/api/v1/transaction-files/00000000-0000-0000-0000-000000000000", headers=auth_header)
     log_test("TC-FILE-07", "Hapus Berkas Gagal - File ID Tidak Ditemukan", code == 404, code, 404)
+
+    # =========================================================================
+    # TEST-07: ROLE-BASED ACCESS CONTROL (RBAC) & PERMISSIONS
+    # =========================================================================
+    print(f"\n{Colors.BOLD}{Colors.YELLOW}--- [TEST-07] Testing Hak Akses & RBAC (Role-Based Access Control) ---{Colors.END}")
+
+    # Buat akun STAFF khusus untuk pengujian otorisasi
+    staff_username = f"staff_rbac_{ts}"
+    staff_password = "Password123!"
+    code, staff_create_res, _ = run_curl("POST", "/api/v1/users", headers=auth_header, multipart={"request": {
+        "name": "Staff RBAC Test",
+        "username": staff_username,
+        "password": staff_password,
+        "phone": "081299998888",
+        "address": "Jakarta Selatan",
+        "role": "STAFF"
+    }})
+    staff_id = staff_create_res.get("data", {}).get("id") if staff_create_res and staff_create_res.get("data") else None
+
+    # Login sebagai STAFF
+    code, staff_login_res, _ = run_curl("POST", "/api/auth/login", data={"username": staff_username, "password": staff_password})
+    staff_token = staff_login_res.get("data", {}).get("accessToken") if staff_login_res and staff_login_res.get("data") else None
+    staff_header = {"Authorization": f"Bearer {staff_token}"} if staff_token else {}
+
+    # TC-RBAC-01: User role STAFF ditolak saat POST /api/v1/users
+    code, _, _ = run_curl("POST", "/api/v1/users", headers=staff_header, multipart={"request": {
+        "name": "Hacker User", "username": f"hack_{ts}", "password": "Password123!", "phone": "081234567890", "address": "Jkt", "role": "ADMIN"
+    }})
+    log_test("TC-RBAC-01", "STAFF Ditolak Saat Tambah User Baru (Harus 403)", code == 403, code, 403)
+
+    # TC-RBAC-02: User role STAFF ditolak saat PUT /api/v1/users/{id}
+    code, _, _ = run_curl("PUT", f"/api/v1/users/{admin_user_id}", headers=staff_header, multipart={"request": {
+        "name": "Updated By Staff", "username": admin_username, "phone": "081234567890", "address": "Jkt", "role": "ADMIN"
+    }})
+    log_test("TC-RBAC-02", "STAFF Ditolak Saat Update User (Harus 403)", code == 403, code, 403)
+
+    # TC-RBAC-03: User role STAFF ditolak saat DELETE /api/v1/users/{id}
+    code, _, _ = run_curl("DELETE", f"/api/v1/users/{admin_user_id}", headers=staff_header)
+    log_test("TC-RBAC-03", "STAFF Ditolak Saat Hapus User (Harus 403)", code == 403, code, 403)
+
+    # TC-RBAC-04: User role STAFF ditolak saat PATCH /api/v1/users/{id} (Reset Password)
+    code, _, _ = run_curl("PATCH", f"/api/v1/users/{admin_user_id}", headers=staff_header, data={
+        "oldPassword": "Password123!",
+        "newPassword": "HackedPassword123!"
+    })
+    log_test("TC-RBAC-04", "STAFF Ditolak Saat Reset Password User (Harus 403)", code == 403, code, 403)
+
+    # TC-RBAC-05: User role STAFF ditolak saat POST /api/v1/packages
+    code, _, _ = run_curl("POST", "/api/v1/packages", headers=staff_header, multipart={"request": {
+        "name": "Paket Ilegal", "description": "Deskripsi Paket", "price": 10000, "type": "WEIGHT", "daysEstimation": 2, "benefitIds": [benefit_id]
+    }})
+    log_test("TC-RBAC-05", "STAFF Ditolak Saat Tambah Paket Layanan (Harus 403)", code == 403, code, 403)
+
+    # TC-RBAC-06: User role STAFF ditolak saat POST /api/v1/benefits
+    code, _, _ = run_curl("POST", "/api/v1/benefits", headers=staff_header, data={"name": f"Benefit Ilegal {ts}"})
+    log_test("TC-RBAC-06", "STAFF Ditolak Saat Tambah Benefit Layanan (Harus 403)", code == 403, code, 403)
+
+    # TC-RBAC-07: User role ADMIN berhasil akses GET /api/v1/users
+    code, _, _ = run_curl("GET", "/api/v1/users?page=0&size=5", headers=auth_header)
+    log_test("TC-RBAC-07", "ADMIN Berhasil Melihat Daftar User (Harus 200)", code == 200, code, 200)
+
+    # TC-RBAC-08: User role STAFF berhasil akses GET /api/v1/packages dan GET /api/v1/customers
+    code_pkg, _, _ = run_curl("GET", "/api/v1/packages?page=0&size=5", headers=staff_header)
+    code_cust, _, _ = run_curl("GET", "/api/v1/customers?page=0&size=5", headers=staff_header)
+    pass_staff_read = (code_pkg == 200 and code_cust == 200)
+    log_test("TC-RBAC-08", "STAFF Berhasil Melihat Paket & Pelanggan (Harus 200)", pass_staff_read, code_pkg, 200)
 
     # =========================================================================
     # SUMMARY REPORT

@@ -35,10 +35,14 @@ public class RedisCacheService {
         redisTemplate.delete(key);
     }
 
+    public void deleteByPattern(String pattern) {
+        java.util.Set<String> keys = redisTemplate.keys(pattern);
+        if (keys != null && !keys.isEmpty()) {
+            redisTemplate.delete(keys);
+        }
+    }
+
     public boolean exists(String key) {
         return Boolean.TRUE.equals(redisTemplate.hasKey(key));
     }
-
-
-
 }

@@ -38,11 +38,11 @@ public class TransactionDetailEntity extends BaseEntity {
 
     private LocalDateTime deliveredDate;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "package_id")
     private PackageEntity pkg;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "transaction_id")
     private TransactionEntity transaction;
 

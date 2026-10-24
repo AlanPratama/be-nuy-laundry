@@ -73,7 +73,21 @@ public class TransactionFileServiceImpl implements TransactionFileUseCase {
             fileModel.setTransaction(transactionModel);
         }
 
-        return transactionFileRepositoryPort.saveAll(transactionFileModels);
+        try {
+            return transactionFileRepositoryPort.saveAll(transactionFileModels);
+        } catch (Exception e) {
+            List<String> filePaths = transactionFileModels.stream()
+                    .map(TransactionFileModel::getFilePath)
+                    .filter(ValueUtil::hasValueString)
+                    .toList();
+            if (!filePaths.isEmpty()) {
+                try {
+                    fileUseCase.deleteObjects(filePaths);
+                } catch (Exception ignored) {
+                }
+            }
+            throw e;
+        }
     }
 
     @Override

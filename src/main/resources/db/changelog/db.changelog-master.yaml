@@ -35,3 +35,9 @@ databaseChangeLog:
   - include:
       file: 012-add-photo-packages.yaml
       relativeToChangelogFile: true
+  - include:
+      file: 013-add-performance-indexes.yaml
+      relativeToChangelogFile: true
+  - include:
+      file: 014-add-trigram-gin-indexes.yaml
+      relativeToChangelogFile: true

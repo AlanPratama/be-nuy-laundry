@@ -105,9 +105,9 @@ graph TD
      - `database.adapter`: Mengadaptasi operasi repository port ke Spring Data JPA.
      - `database.entity`: Entitas JPA yang merepresentasikan tabel PostgreSQL fisik.
      - `database.mapper`: Mengubah dua arah (*two-way mapping*) antara JPA Entity dan Domain Model.
-     - `internal.cache`: Implementasi penyimpanan session di Redis.
+     - `internal.cache`: Implementasi penyimpanan session token di Redis (`SessionCacheService`) dan generic master data cache paket & benefit (`RedisCacheService`).
      - `external.minio`: Implementasi upload, download, dan hapus berkas via MinIO S3 API.
-     - `internal.security`: Konfigurasi Spring Security, implementasi JWT (`JwtServiceImpl`), dan filter keamanan HTTP (`JwtAuthFilter`).
+     - `internal.security`: Konfigurasi Spring Security, implementasi JWT (`JwtServiceImpl`), filter keamanan HTTP (`JwtAuthFilter`), serta custom handler 401 dan 403.
 
 ---
 
@@ -179,7 +179,7 @@ sequenceDiagram
 
 1. **Komunikasi Sinkron (Synchronous)**:
    - Seluruh interaksi REST API antara klien dan backend berlangsung secara sinkron berbasis HTTP/1.1 (JSON dan `multipart/form-data`).
-   - Interaksi dengan PostgreSQL (via JDBC/HikariCP), Redis (via Jedis/Lettuce), dan MinIO (via HTTP REST S3 SDK) dieksekusi secara sinkron (*blocking I/O*) di dalam thread request Tomcat.
+   - Interaksi dengan PostgreSQL (via JDBC/HikariCP), Redis (via Jedis/Lettuce), dan MinIO (via HTTP REST S3 SDK) dieksekusi di dalam thread request Tomcat. Khusus untuk operasi upload file multi-part fisik ke MinIO S3, I/O storage telah didecouple (dipisahkan) di luar transaksi database SQL guna mengeliminasi penahanan koneksi pool (*HikariCP connection pool starvation*) dan dilengkapi *compensating rollback*.
 
 2. **Status Komunikasi Asinkron (Asynchronous)**:
    - **Aktual**: Tidak ada proses asinkron aktif pada alur bisnis saat ini. Tidak ada *message publishing* ke antrian RabbitMQ yang aktif di lapisan kode sumber.
@@ -191,7 +191,7 @@ sequenceDiagram
 
 ### A. Autentikasi & Otorisasi
 - **Autentikasi**: Berbasis token JWT stateless yang diverifikasi silang dengan sesi di Redis cache (`UserSessionModel`). Jika sesi dicabut (*revoked* / `isActive = false`), token langsung tidak berlaku meskipun masa berlakunya belum habis.
-- **Otorisasi**: Memanfaatkan Role-Based Access Control (`UserRole`: `SUPER_ADMIN`, `ADMIN`, `STAFF`). Endpoint sensitif paket (`PackageController`) dilindungi oleh `@PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")`.
+- **Otorisasi**: Memanfaatkan Role-Based Access Control (`UserRole`: `SUPER_ADMIN`, `ADMIN`, `STAFF`). Seluruh endpoint diproteksi di `SecurityConfig` (kecuali `/api/auth/**` dan `/actuator/health`), serta pengamanan method-level `@PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")` pada `PackageController`, mutasi `BenefitController`, dan seluruh operasi `UserController` (CRUD & reset password). Pelanggaran hak akses ditolak dengan HTTP 403 Forbidden terstandarisasi.
 
 ### B. Standardisasi Response
 Seluruh endpoint konsisten mengembalikan struktur pembungkus `ApiResponse<T>`:
