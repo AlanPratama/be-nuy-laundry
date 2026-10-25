@@ -27,6 +27,7 @@ Sistem menggunakan **Liquibase** untuk version control skema basis data. Master 
 | **012** | `012-add-photo-packages.yaml` | Penambahan kolom `photo` pada tabel `packages`. |
 | **013** | `013-add-performance-indexes.yaml` | Penambahan 10 indeks B-Tree foreign key & filter performa (PERF-06). |
 | **014** | `014-add-trigram-gin-indexes.yaml` | Pengaktifan ekstensi `pg_trgm` dan indeks GIN trigram `customers(name, address)` (OPT-03). |
+| **015** | `015-create-settings.yaml` | Pembuatan tabel konfigurasi outlet & operasional `settings`. |
 
 ---
 
@@ -146,6 +147,20 @@ erDiagram
         VARCHAR_100 content_type
         INT8 file_size
         VARCHAR_50 file_type
+        TIMESTAMP created_at
+        TIMESTAMP updated_at
+    }
+
+    settings {
+        VARCHAR_36 id PK
+        VARCHAR_255 outlet_name
+        TEXT address
+        VARCHAR_50 phone
+        VARCHAR_10 open_hour
+        VARCHAR_10 close_hour
+        INT4 free_radius_km
+        INT4 extra_cost_per_km
+        TEXT receipt_footer_note
         TIMESTAMP created_at
         TIMESTAMP updated_at
     }
@@ -292,3 +307,22 @@ Menyimpan berkas lampiran pendukung transaksi.
 | `file_type` | VARCHAR(50) | NO | Enum: `PAYMENT_RECEIPT`, `CONDITION_BEFORE`, `CONDITION_AFTER`, `INVOICE_DOCUMENT`, `OTHER`. |
 | `created_at` | TIMESTAMP | NO | Waktu upload berkas. |
 | `updated_at` | TIMESTAMP | NO | Waktu pembaruan rekaman. |
+
+---
+
+### 3.9. Tabel `settings`
+Menyimpan konfigurasi profil outlet, jam operasional, radius antar-jemput, dan catatan footer struk.
+
+| Kolom | Tipe Data | Nullable | Keterangan / Constraint |
+| :--- | :--- | :---: | :--- |
+| `id` | VARCHAR(36) | NO | Primary Key (UUID String). |
+| `outlet_name` | VARCHAR(255) | NO | Nama resmi outlet laundry. |
+| `address` | TEXT | YES | Alamat lengkap outlet fisik. |
+| `phone` | VARCHAR(50) | YES | Nomor telepon / kontak outlet. |
+| `open_hour` | VARCHAR(10) | YES | Jam buka operasional (contoh: `07:00`). |
+| `close_hour` | VARCHAR(10) | YES | Jam tutup operasional (contoh: `21:00`). |
+| `free_radius_km` | INT4 | YES | Radius gratis antar-jemput cucian dalam kilometer. |
+| `extra_cost_per_km` | INT4 | YES | Biaya tambahan per kilometer di luar radius gratis. |
+| `receipt_footer_note` | TEXT | YES | Catatan penutup yang dicetak pada struk / nota pelanggan. |
+| `created_at` | TIMESTAMP | NO | Waktu inisialisasi pengaturan. |
+| `updated_at` | TIMESTAMP | NO | Waktu terakhir konfigurasi diperbarui. |

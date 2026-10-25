@@ -41,3 +41,6 @@ databaseChangeLog:
   - include:
       file: 014-add-trigram-gin-indexes.yaml
       relativeToChangelogFile: true
+  - include:
+      file: 015-create-settings.yaml
+      relativeToChangelogFile: true

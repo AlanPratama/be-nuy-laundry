@@ -89,7 +89,7 @@ class UserControllerTest {
         when(userUseCase.getAllUsers(any(UserFilter.class), any(Pageable.class))).thenReturn(page);
 
         ResponseEntity<ApiResponse<PageResponse<UserResponseDTO>>> response =
-                userController.getAll(0, 10, "name", "asc", "John");
+                userController.getAll(0, 10, "name", "asc", "John", null, null, null);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).isNotNull();

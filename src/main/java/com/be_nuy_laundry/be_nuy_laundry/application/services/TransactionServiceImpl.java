@@ -142,7 +142,10 @@ public class TransactionServiceImpl implements TransactionUseCase {
         TransactionModel existingTransactionModel = transactionRepositoryPort.findById(id)
                 .orElseThrow(() -> new DataNotFoundException("Transaksi tidak ditemukan"));
 
-        List<String> packageIds = transactionRequest.getTransactionDetails().stream().map(TransactionDetailRequestDTO::getPackageId).toList();
+        List<String> packageIds = transactionRequest.getTransactionDetails().stream()
+                .map(TransactionDetailRequestDTO::getPackageId)
+                .filter(ValueUtil::hasValueString)
+                .toList();
         Map<String, PackageModel> packageModelMap = packageUseCase.getPackageByIds(packageIds);
         Map<String, TransactionDetailModel> detailModelMap = transactionDetailUseCase.getByTransactionIdMap(existingTransactionModel.getId());
 
@@ -154,22 +157,37 @@ public class TransactionServiceImpl implements TransactionUseCase {
 
         for (TransactionDetailRequestDTO detailRequest : transactionRequest.getTransactionDetails()) {
             PackageModel packageModel = packageModelMap.get(detailRequest.getPackageId());
-            Integer quantity = detailRequest.getQuantity();
-            BigDecimal totalPackagePrice = new BigDecimal(quantity * packageModel.getPrice().intValue());
 
             TransactionDetailModel transactionDetailModel;
             if (detailModelMap.containsKey(detailRequest.getId())) {
                 transactionDetailModel = detailModelMap.get(detailRequest.getId());
+                if (packageModel == null && transactionDetailModel.getPkg() != null) {
+                    packageModel = transactionDetailModel.getPkg();
+                }
             } else {
+                if (packageModel == null) {
+                    throw new DataNotFoundException("Paket tidak ditemukan");
+                }
                 transactionDetailModel = new TransactionDetailModel();
                 transactionDetailModel.setTargetDate(detailRequest.getOrderDate().plusDays(packageModel.getDaysEstimation()));
             }
 
-            transactionDetailModel.setPkg(packageModel);
-            transactionDetailModel.setPackageName(packageModel.getName());
-            transactionDetailModel.setPackageDescription(packageModel.getDescription());
-            transactionDetailModel.setPackageType(packageModel.getType());
-            transactionDetailModel.setPackageDaysEstimation(packageModel.getDaysEstimation());
+            Integer quantity = detailRequest.getQuantity() != null ? detailRequest.getQuantity() : (transactionDetailModel.getQuantity() != null ? transactionDetailModel.getQuantity() : 1);
+
+            BigDecimal unitPrice = packageModel != null 
+                    ? packageModel.getPrice() 
+                    : (transactionDetailModel.getTotalPrice() != null && transactionDetailModel.getQuantity() != null && transactionDetailModel.getQuantity() > 0 
+                        ? transactionDetailModel.getTotalPrice().divide(BigDecimal.valueOf(transactionDetailModel.getQuantity()), java.math.RoundingMode.HALF_UP) 
+                        : BigDecimal.valueOf(8000));
+            BigDecimal totalPackagePrice = unitPrice.multiply(BigDecimal.valueOf(quantity));
+
+            if (packageModel != null) {
+                transactionDetailModel.setPkg(packageModel);
+                transactionDetailModel.setPackageName(packageModel.getName());
+                transactionDetailModel.setPackageDescription(packageModel.getDescription());
+                transactionDetailModel.setPackageType(packageModel.getType());
+                transactionDetailModel.setPackageDaysEstimation(packageModel.getDaysEstimation());
+            }
 
             transactionDetailModel.setQuantity(quantity);
             transactionDetailModel.setTotalPrice(totalPackagePrice);
@@ -178,7 +196,7 @@ public class TransactionServiceImpl implements TransactionUseCase {
 
             totalAllPackagesPrice = totalAllPackagesPrice.add(totalPackagePrice);
 
-            if (transactionDetailModel.getTargetDate().isAfter(maxEstimationDate))
+            if (transactionDetailModel.getTargetDate() != null && transactionDetailModel.getTargetDate().isAfter(maxEstimationDate))
                 maxEstimationDate = transactionDetailModel.getTargetDate();
         }
 

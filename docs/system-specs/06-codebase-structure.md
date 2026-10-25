@@ -72,9 +72,9 @@ Menangani HTTP transport layer, serialisasi/deserialisasi JSON, validasi input H
 
 | Paket | Komponen Penting | Tanggung Jawab & Implementasi |
 | :--- | :--- | :--- |
-| `controllers/` | `AuthController`<br>`CustomerController`<br>`PackageController`<br>`BenefitController`<br>`TransactionController`<br>`TransactionFileController`<br>`UserController`<br>`FileController` | Menerima HTTP Request, mengekstrak path/query parameter/body, memanggil Inbound Port (`ServicePort`), dan membungkus hasil dalam `ResponseEntity<ApiResponse<T>>`. |
-| `dtos/request/` | `auth/LoginRequest`<br>`user/UserRequest`<br>`user/UserUpdateRequest`<br>`customer/CustomerRequest`<br>`pkg/PackageRequest`<br>`benefit/BenefitRequest`<br>`transaction/header/TransactionRequest`<br>`transaction/header/TransactionStatusUpdateRequest`<br>`transaction/header/TransactionPaymentStatusUpdateRequest`<br>`transaction/detail/TransactionDetailRequest`<br>`transaction/file/TransactionFileUploadRequest` | Kontrak payload JSON/multipart yang dikirim oleh client. Menggunakan anotasi Jakarta Validation (`@NotBlank`, `@NotNull`, `@Pattern`, `@ValidImage`). |
-| `dtos/response/` | `auth/AuthResponse`<br>`transaction/header/TransactionResponse`<br>`transaction/file/TransactionFileResponse` | DTO representasi data balikan khusus ke client untuk membatasi atau menyusun format view tertentu. |
+| `controllers/` | `AuthController`<br>`CustomerController`<br>`PackageController`<br>`BenefitController`<br>`TransactionController`<br>`TransactionDetailController`<br>`TransactionFileController`<br>`UserController`<br>`DashboardController`<br>`SettingController`<br>`FileController` | Menerima HTTP Request, mengekstrak path/query parameter/body/multipart, memanggil Inbound Port (`*UseCase`), dan membungkus hasil dalam `ResponseEntity<ApiResponse<T>>`. |
+| `dtos/request/` | `auth/LoginRequest`<br>`user/UserRequest`<br>`user/UserUpdateRequest`<br>`customer/CustomerRequest`<br>`pkg/PackageRequest`<br>`benefit/BenefitRequest`<br>`transaction/header/TransactionRequest`<br>`transaction/header/TransactionStatusUpdateRequest`<br>`transaction/header/TransactionPaymentStatusUpdateRequest`<br>`transaction/detail/TransactionDetailRequest`<br>`transaction/file/TransactionFileUploadRequest`<br>`setting/SettingRequest` | Kontrak payload JSON/multipart yang dikirim oleh client. Menggunakan anotasi Jakarta Validation (`@NotBlank`, `@NotNull`, `@Pattern`, `@ValidImage`). |
+| `dtos/response/` | `auth/AuthResponse`<br>`transaction/header/TransactionResponse`<br>`transaction/file/TransactionFileResponse`<br>`dashboard/DashboardMetricsDTO`<br>`setting/SettingResponse` | DTO representasi data balikan khusus ke client untuk membatasi atau menyusun format view tertentu. |
 | `validations/` | `@ValidImage`<br>`ImageValidator` | Custom constraint annotation dan validator untuk memeriksa `MultipartFile`: mime type (`image/jpeg`, `image/png`, `image/webp`) dan ukuran maksimum (3 MB). |
 | `advices/` | `GlobalExceptionHandler` | `@RestControllerAdvice` yang menangkap exception (`MethodArgumentNotValidException`, `DataNotFoundException`, `BadRequestException`, `UnauthorizedException`, `Exception`) dan mengembalikan `ApiResponse<T>` dengan HTTP status code yang sesuai. |
 
@@ -85,9 +85,9 @@ Pusat orkestrasinya logika bisnis. Layer ini tidak terikat pada framework web at
 
 | Paket | Komponen Penting | Tanggung Jawab & Implementasi |
 | :--- | :--- | :--- |
-| `ports/in/` | `AuthServicePort`<br>`UserServicePort`<br>`CustomerServicePort`<br>`PackageServicePort`<br>`BenefitServicePort`<br>`TransactionServicePort`<br>`TransactionFileServicePort` | Interface kontrak use-case aplikasi yang diekspos ke presentation/controller layer. |
-| `ports/out/` | `UserDatabasePort`<br>`UserSessionDatabasePort`<br>`CustomerDatabasePort`<br>`PackageDatabasePort`<br>`BenefitDatabasePort`<br>`PackageBenefitDatabasePort`<br>`TransactionDatabasePort`<br>`TransactionDetailDatabasePort`<br>`TransactionFileDatabasePort`<br>`FileStoragePort` | Secondary Port (SPI) yang mendefinisikan operasi persistensi database dan penyimpanan file fisik yang harus disediakan oleh Infrastructure. |
-| `services/` | `AuthServiceImpl`<br>`UserServiceImpl`<br>`CustomerServiceImpl`<br>`PackageServiceImpl`<br>`BenefitServiceImpl`<br>`TransactionServiceImpl`<br>`TransactionFileServiceImpl` | Implementasi use-case bisnis, pengelolaan transaksi declarative (`@Transactional`), validasi integritas entitas, kalkulasi total harga laundry, dan integrasi antar port. |
+| `ports/in/` | `AuthUseCase`<br>`UserUseCase`<br>`CustomerUseCase`<br>`PackageUseCase`<br>`BenefitUseCase`<br>`TransactionUseCase`<br>`TransactionDetailUseCase`<br>`TransactionFileUseCase`<br>`DashboardUseCase`<br>`SettingUseCase`<br>`FileUseCase` | Interface kontrak use-case aplikasi yang diekspos ke presentation/controller layer. |
+| `ports/out/` | `AuthRepositoryPort`<br>`UserRepositoryPort`<br>`CustomerRepositoryPort`<br>`PackageRepositoryPort`<br>`BenefitRepositoryPort`<br>`TransactionRepositoryPort`<br>`TransactionDetailRepositoryPort`<br>`TransactionFileRepositoryPort`<br>`SettingRepositoryPort`<br>`FileStoragePort` | Secondary Port (SPI) yang mendefinisikan operasi persistensi database dan penyimpanan file fisik yang harus disediakan oleh Infrastructure. |
+| `services/` | `AuthServiceImpl`<br>`UserServiceImpl`<br>`CustomerServiceImpl`<br>`PackageServiceImpl`<br>`BenefitServiceImpl`<br>`TransactionServiceImpl`<br>`TransactionDetailServiceImpl`<br>`TransactionFileServiceImpl`<br>`DashboardServiceImpl`<br>`SettingServiceImpl`<br>`FileServiceImpl` | Implementasi use-case bisnis, pengelolaan transaksi declarative (`@Transactional`), validasi integritas entitas, kalkulasi total harga laundry, analitika metrik dashboard, pengaturan outlet, dan integrasi antar port. |
 
 ---
 
@@ -96,7 +96,7 @@ Entitas bisnis murni dan enum yang menjadi representasi domain model aplikasi.
 
 | Paket | Komponen Penting | Tanggung Jawab & Implementasi |
 | :--- | :--- | :--- |
-| `model/` | `UserModel`<br>`UserSessionModel`<br>`CustomerModel`<br>`PackageModel`<br>`BenefitModel`<br>`PackageBenefitModel`<br>`TransactionModel`<br>`TransactionDetailModel`<br>`TransactionFileModel`<br>`AuthModel` | Plain Java Objects (POJO) beranotasi Lombok (`@Data`, `@Builder`, `@NoArgsConstructor`, `@AllArgsConstructor`) tanpa anotasi `@Entity` JPA. |
+| `model/` | `UserModel`<br>`UserSessionModel`<br>`CustomerModel`<br>`PackageModel`<br>`BenefitModel`<br>`TransactionModel`<br>`TransactionDetailModel`<br>`TransactionFileModel`<br>`SettingModel`<br>`BaseModel` | Plain Java Objects (POJO) beranotasi Lombok (`@Data`, `@Builder`, `@NoArgsConstructor`, `@AllArgsConstructor`) tanpa anotasi `@Entity` JPA. |
 | `enums/` | `UserRoleEnum`<br>`TransactionStatusEnum`<br>`TransactionPaymentStatusEnum`<br>`TransactionFileType` | Nilai konstan status bisnis (misal: role pengguna, siklus order laundry, jenis file attachment). |
 | `utils/` | `DateUtil`<br>`ValueUtil` | Helper fungsi domain untuk manipulasi tanggal/waktu dan validasi null/empty check pada String, List, Map, dan Object. |
 
@@ -106,15 +106,16 @@ Entitas bisnis murni dan enum yang menjadi representasi domain model aplikasi.
 Implementasi teknis terhadap secondary ports (Database, Object Storage, Security, Cache).
 
 #### 1. Internal Database (`infrastructure/internal/database`)
-- **`entity/`**: Entitas JPA (`UserEntity`, `CustomerEntity`, `TransactionEntity`, dll) yang memetakan tabel PostgreSQL via Hibernate. Turunan dari `BaseEntity` (`createdAt`, `createdBy`, `updatedAt`, `updatedBy`).
+- **`entity/`**: Entitas JPA (`UserEntity`, `CustomerEntity`, `TransactionEntity`, `SettingEntity`, dll) yang memetakan tabel PostgreSQL via Hibernate. Turunan dari `BaseEntity` (`createdAt`, `createdBy`, `updatedAt`, `updatedBy`).
 - **`repository/`**: Spring Data JPA Repository (`JpaRepository`, `JpaSpecificationExecutor`).
 - **`specifications/` & `filters/`**: Spesifikasi JPA dinamis (`CustomerSpecification`, `TransactionSpecification`, `UserSpecification`) yang membaca kriteria pencarian dari `CustomerFilter`, `TransactionFilter`, `UserFilter`.
-- **`mapper/`**: MapStruct atau manual mappers (`UserMapper`, `TransactionMapper`, `CustomerMapper`, `PackageMapper`, dll) yang melakukan konversi dua arah antara JPA Entity dan Domain Model.
-- **`adapter/`**: Implementasi dari Outbound Port (contoh: `TransactionDatabaseAdapter` mengimplementasikan `TransactionDatabasePort`). Adapter memanggil `TransactionRepository`, melakukan mapping Entity <-> Model via `TransactionMapper`, dan menangani query database.
+- **`mapper/`**: MapStruct atau manual mappers (`UserMapper`, `TransactionMapper`, `CustomerMapper`, `PackageMapper`, `SettingMapper`, dll) yang melakukan konversi dua arah antara JPA Entity dan Domain Model.
+- **`adapter/`**: Implementasi dari Outbound Port (contoh: `TransactionDatabaseAdapter` mengimplementasikan `TransactionRepositoryPort`). Adapter memanggil `TransactionRepository`, melakukan mapping Entity <-> Model via `TransactionMapper`, dan menangani query database.
 
 #### 2. Internal Cache & Security (`infrastructure/internal/`)
 - **`cache/RedisConfig`, `RedisCacheService`, & `SessionCacheService`**: Koneksi Redis Standalone via Spring Data Redis (Jedis/Lettuce), operasi `set`, `get`, `delete`, `deleteByPattern`, pengelolaan TTL sesi JWT, serta generic cache-aside data master (paket & benefit).
-- **`security/SecurityConfig`**: Konfigurasi `SecurityFilterChain`, CSRF disabled, SessionManagement stateless, `requestMatchers` public vs protected, serta kustomisasi `accessDeniedHandler` (HTTP 403) dan `authenticationEntryPoint` (HTTP 401).
+- **`security/SecurityConfig`**: Konfigurasi `SecurityFilterChain`, CSRF disabled, SessionManagement stateless, `requestMatchers` public vs protected, integrasi `CorsConfigurationSource`, serta kustomisasi `accessDeniedHandler` (HTTP 403) dan `authenticationEntryPoint` (HTTP 401).
+- **`security/WebMvcCorsConfig`**: Konfigurasi global CORS `WebMvcConfigurer` yang mengizinkan origin frontend Vite/Nuxt (`localhost:5173`, `localhost:3000`), credentials, dan metode HTTP (`GET`, `POST`, `PUT`, `DELETE`, `OPTIONS`, `PATCH`).
 - **`security/JwtAuthFilter`**: Filter per request (`OncePerRequestFilter`) yang mengekstrak `Bearer <token>`, memvalidasi signature & expiration via `JwtService`, serta memeriksa keaktifan sesi di database/Redis.
 - **`security/JwtServiceImpl`**: Implementasi port untuk generate, parse, dan validasi token JWT HMAC-SHA256.
 

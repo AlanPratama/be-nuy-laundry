@@ -60,10 +60,16 @@ public class UserController {
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "createdAt") String sortBy,
             @RequestParam(defaultValue = "desc") String direction,
-            @RequestParam(required = false) String name
+            @RequestParam(required = false) String name,
+            @RequestParam(required = false) String username,
+            @RequestParam(required = false) String phone,
+            @RequestParam(required = false) com.be_nuy_laundry.be_nuy_laundry.infrastructure.internal.database.entity.enumrated.UserRole role
     ) {
         UserFilter userFilter = UserFilter.builder()
                 .name(name)
+                .username(username)
+                .phone(phone)
+                .role(role)
                 .build();
 
         Pageable pageable = PageUtil.setPageable(page, size, sortBy, direction);

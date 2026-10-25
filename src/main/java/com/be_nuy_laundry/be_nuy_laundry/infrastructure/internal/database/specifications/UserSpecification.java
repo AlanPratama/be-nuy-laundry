@@ -16,14 +16,20 @@ public class UserSpecification {
             List<Predicate> predicates = new ArrayList<>();
 
             if (userFilter != null) {
-                if (ValueUtil.hasValueString(userFilter.getName()))
-                    predicates.add(criteriaBuilder.like(criteriaBuilder.lower(root.get("name")), "%" + userFilter.getName().toLowerCase() + "%"));
+                if (ValueUtil.hasValueString(userFilter.getName())) {
+                    String pattern = "%" + userFilter.getName().toLowerCase() + "%";
+                    predicates.add(criteriaBuilder.or(
+                            criteriaBuilder.like(criteriaBuilder.lower(root.get("name")), pattern),
+                            criteriaBuilder.like(criteriaBuilder.lower(root.get("username")), pattern),
+                            criteriaBuilder.like(root.get("phone"), pattern)
+                    ));
+                }
 
                 if (ValueUtil.hasValueString(userFilter.getUsername()))
-                    predicates.add(criteriaBuilder.equal(criteriaBuilder.lower(root.get("username")), userFilter.getUsername().toLowerCase()));
+                    predicates.add(criteriaBuilder.like(criteriaBuilder.lower(root.get("username")), "%" + userFilter.getUsername().toLowerCase() + "%"));
 
                 if (ValueUtil.hasValueString(userFilter.getPhone()))
-                    predicates.add(criteriaBuilder.equal(root.get("phone"), userFilter.getPhone()));
+                    predicates.add(criteriaBuilder.like(root.get("phone"), "%" + userFilter.getPhone() + "%"));
 
                 if (ValueUtil.hasValueObject(userFilter.getRole()))
                     predicates.add(criteriaBuilder.equal(root.get("role"), userFilter.getRole()));

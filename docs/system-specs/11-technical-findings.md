@@ -129,3 +129,62 @@ Setiap temuan dilengkapi dengan **lokasi kode**, **analisis akar masalah**, **da
   Ketika otorisasi method security `@PreAuthorize` ditolak, Spring Security melempar `AccessDeniedException` yang dikonversi oleh server menjadi response error default Tomcat / Whitelabel HTML, melanggar struktur kontrak `ApiResponse<T>`.
 - **Resolusi (RESOLVED)**:
   Mengonfigurasi custom `accessDeniedHandler` dan `authenticationEntryPoint` di dalam `SecurityConfig.java` yang secara eksplisit menulis response JSON terstandarisasi dengan status **HTTP 403 Forbidden** dan **HTTP 401 Unauthorized**.
+
+---
+
+### FIND-12: Error Validasi Paket saat Update Status Transaksi (`Beberapa paket tidak ditemukan`)
+- **Lokasi**: `src/main/java/com/be_nuy_laundry/be_nuy_laundry/application/services/TransactionServiceImpl.java`.
+- **Analisis & Masalah Asli**:
+  Ketika klien melakukan pembaruan data transaksi (misal: memindahkan status dari `DONE` kembali ke `IN_PROGRESS` atau `CANCELED`), jika payload request tidak mengirim ulang daftar `details` (karena hanya ingin mengubah status atau tanggal), method `updateTransaction` memicu pencarian ID paket dari list kosong yang berujung pada melempar exception `DataNotFoundException("Beberapa paket tidak ditemukan")`.
+- **Resolusi (RESOLVED)**:
+  Memperbaiki alur percabangan di `TransactionServiceImpl.updateTransaction`:
+  1. Jika `request.getDetails()` bernilai `null` atau kosong, sistem mempertahankan entitas `transaction_details` yang telah tersimpan di database dan hanya memperbarui metadata header transaksi (`status`, `targetDate`, `deliveredDate`, `orderDate`, dll).
+  2. Validasi lookup master paket hanya dieksekusi jika pengguna secara eksplisit mengirimkan array `details` baru.
+
+---
+
+### FIND-13: Status Keaktifan Pengguna (`isActive`) Belum Dapat Diperbarui via API User Update
+- **Lokasi**: 
+  - `src/main/java/com/be_nuy_laundry/be_nuy_laundry/presentation/dtos/request/user/UserUpdateRequestDTO.java`
+  - `src/main/java/com/be_nuy_laundry/be_nuy_laundry/application/services/UserServiceImpl.java`
+  - `src/main/java/com/be_nuy_laundry/be_nuy_laundry/infrastructure/internal/database/mapper/UserMapper.java`
+- **Analisis & Masalah Asli**:
+  Kolom `is_active` telah tersedia di skema basis data PostgreSQL (changelog 011), namun DTO `UserUpdateRequestDTO` belum menyediakan field `isActive`. Akibatnya, pemanggilan `PUT /api/v1/users/{id}` dari Web Admin untuk mengaktifkan atau menonaktifkan akun staff tidak berpengaruh pada basis data.
+- **Resolusi (RESOLVED)**:
+  1. Menambahkan field `private Boolean isActive;` pada `UserUpdateRequestDTO`.
+  2. Menambahkan logika mutasi pada `UserServiceImpl.updateUser`:
+     ```java
+     if (request.getIsActive() != null) {
+         existingUser.setIsActive(request.getIsActive());
+     }
+     ```
+  3. Memperbarui `UserMapper` untuk memastikan field `isActive` dipetakan secara simetris dari JPA Entity -> Domain Model -> Response DTO.
+
+---
+
+### FIND-14: Pencarian Pengguna Belum Mendukung Filter Kombinasi Role & Keyword
+- **Lokasi**: 
+  - `src/main/java/com/be_nuy_laundry/be_nuy_laundry/infrastructure/internal/database/specifications/UserSpecification.java`
+  - `src/main/java/com/be_nuy_laundry/be_nuy_laundry/presentation/controllers/UserController.java`
+- **Analisis & Masalah Asli**:
+  Pencarian pengguna pada antarmuka admin dashboard membutuhkan filter fleksibel (berdasarkan nama/username, nomor telepon, serta spesifik role `ADMIN` atau `STAFF`). Ketiadaan parameter ini memaksa frontend melakukan filter di memori klien yang tidak scalable.
+- **Resolusi (RESOLVED)**:
+  Memperluas `UserFilter` dan `UserSpecification` dengan predicate SQL dinamis:
+  - Case-insensitive search pada `name`, `username`, dan `phone`.
+  - Filter eksak berbasis `role` (`SUPER_ADMIN`, `ADMIN`, `STAFF`) dan status `isActive`.
+
+---
+
+### FIND-15: Cross-Origin Resource Sharing (CORS) Blocked pada Port Vite & Nuxt Client
+- **Lokasi**:
+  - `src/main/java/com/be_nuy_laundry/be_nuy_laundry/infrastructure/internal/security/WebMvcCorsConfig.java`
+  - `src/main/java/com/be_nuy_laundry/be_nuy_laundry/infrastructure/internal/security/SecurityConfig.java`
+- **Analisis & Masalah Asli**:
+  Browser modern memblokir permintaan HTTP (khususnya preflight request `OPTIONS`) dari origin frontend Vite Admin (`http://localhost:5173`) dan Nuxt Customer (`http://localhost:3000`) karena Spring Security secara default menolak cross-origin request tanpa header `Access-Control-Allow-Origin`.
+- **Resolusi (RESOLVED)**:
+  1. Mengimplementasikan konfigurasi global `WebMvcCorsConfig` via `WebMvcConfigurer`:
+     - `allowedOriginPatterns("*")`
+     - `allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH")`
+     - `allowedHeaders("*")`
+     - `allowCredentials(true)`
+  2. Mendaftarkan bean `CorsConfigurationSource` ke dalam `SecurityFilterChain` (`.cors(cors -> cors.configurationSource(...))`) agar preflight `OPTIONS` diizinkan lewat sebelum proses filter JWT Bearer dieksekusi.

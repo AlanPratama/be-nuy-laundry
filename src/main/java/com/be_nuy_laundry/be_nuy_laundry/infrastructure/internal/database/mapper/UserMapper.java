@@ -148,6 +148,7 @@ public class UserMapper {
         userResponse.setAddress(model.getAddress());
         userResponse.setRole(model.getRole());
         userResponse.setProfilePicture(model.getProfilePicture());
+        userResponse.setIsActive(model.getIsActive());
         userResponse.setCreatedAt(model.getCreatedAt());
         userResponse.setUpdatedAt(model.getUpdatedAt());
 

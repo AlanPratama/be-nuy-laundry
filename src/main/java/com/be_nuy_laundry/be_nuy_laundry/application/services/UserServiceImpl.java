@@ -98,6 +98,9 @@ public class UserServiceImpl implements UserUseCase {
         existingModel.setPhone(requestDTO.getPhone());
         existingModel.setAddress(requestDTO.getAddress());
         existingModel.setRole(ValueUtil.orElseUserRole(requestDTO.getRole(), UserRole.STAFF));
+        if (requestDTO.getIsActive() != null) {
+            existingModel.setIsActive(requestDTO.getIsActive());
+        }
 
         String filePath = existingModel.getProfilePicture();
 
