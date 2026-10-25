@@ -12,4 +12,5 @@ public interface CustomerRepositoryPort {
     Optional<CustomerModel> findById(String id);
     Page<CustomerModel> findAll(CustomerFilter customerFilter, Pageable pageable);
     void deleteById(String id);
+    com.be_nuy_laundry.be_nuy_laundry.presentation.dtos.response.customer.CustomerMetricsDTO getMetrics();
 }

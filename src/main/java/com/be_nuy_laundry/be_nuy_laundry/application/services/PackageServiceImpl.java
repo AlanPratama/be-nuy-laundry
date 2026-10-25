@@ -114,7 +114,12 @@ public class PackageServiceImpl implements PackageUseCase{
         PackageModel existing = this.getPackageById(id);
         String filePath = existing.getPhoto();
 
-        if (ValueUtil.hasValueMultipartFile(file)) {
+        if (Boolean.TRUE.equals(requestDTO.getRemovePhoto())) {
+            if (ValueUtil.hasValueString(existing.getPhoto())) {
+                fileUseCase.delete(existing.getPhoto());
+            }
+            filePath = null;
+        } else if (ValueUtil.hasValueMultipartFile(file)) {
             if (ValueUtil.hasValueString(existing.getPhoto())) {
                 fileUseCase.delete(existing.getPhoto());
             }
@@ -155,5 +160,10 @@ public class PackageServiceImpl implements PackageUseCase{
             redisCacheService.delete(CacheKey.PACKAGE_DETAIL + id);
         }
         redisCacheService.deleteByPattern(CacheKey.PACKAGE_PATTERN);
+    }
+
+    @Override
+    public com.be_nuy_laundry.be_nuy_laundry.presentation.dtos.response.packages.PackageMetricsDTO getMetrics() {
+        return repositoryPort.getMetrics();
     }
 }

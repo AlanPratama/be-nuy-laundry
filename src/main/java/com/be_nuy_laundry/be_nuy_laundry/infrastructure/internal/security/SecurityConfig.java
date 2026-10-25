@@ -39,8 +39,11 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/actuator/health", "/actuator/health/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/packages/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/benefits/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/transactions/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/outlet/**", "/api/v1/settings/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/files/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/articles/**").permitAll()
                         .anyRequest().authenticated())
             .exceptionHandling(ex -> ex
                 .authenticationEntryPoint((request, response, authException) -> {

@@ -23,6 +23,9 @@ class SettingServiceImplTest {
     @Mock
     private SettingRepositoryPort settingRepositoryPort;
 
+    @Mock
+    private com.be_nuy_laundry.be_nuy_laundry.application.ports.in.FileUseCase fileUseCase;
+
     @InjectMocks
     private SettingServiceImpl settingService;
 
@@ -115,6 +118,51 @@ class SettingServiceImplTest {
 
         assertThat(response).isNotNull();
         assertThat(response.getOutletName()).isEqualTo("New Name");
+        verify(settingRepositoryPort).save(existing);
+    }
+
+    @Test
+    @DisplayName("givenFile_whenUpdateSetting_thenUploadAndSave")
+    void givenFile_whenUpdateSetting_thenUploadAndSave() {
+        SettingModel existing = SettingModel.builder()
+                .outletName("Old Name")
+                .build();
+        existing.setId("set-1");
+
+        org.springframework.mock.web.MockMultipartFile mockFile =
+                new org.springframework.mock.web.MockMultipartFile("file", "logo.png", "image/png", new byte[]{1, 2, 3});
+
+        SettingRequestDTO request = SettingRequestDTO.builder()
+                .outletName("New Name")
+                .file(mockFile)
+                .latitude(-6.2)
+                .longitude(106.8)
+                .googleMapsUrl("https://maps.google.com")
+                .instagram("@nuy")
+                .build();
+
+        SettingModel updated = SettingModel.builder()
+                .outletName("New Name")
+                .logoUrl("outlet/logo.png")
+                .latitude(-6.2)
+                .longitude(106.8)
+                .googleMapsUrl("https://maps.google.com")
+                .instagram("@nuy")
+                .build();
+        updated.setId("set-1");
+
+        when(settingRepositoryPort.getSetting()).thenReturn(Optional.of(existing));
+        when(fileUseCase.upload(any(), any(), any())).thenReturn("outlet/logo.png");
+        when(settingRepositoryPort.save(any(SettingModel.class))).thenReturn(updated);
+
+        SettingResponseDTO response = settingService.updateSetting(request);
+
+        assertThat(response).isNotNull();
+        assertThat(response.getLogoUrl()).isEqualTo("outlet/logo.png");
+        assertThat(response.getLatitude()).isEqualTo(-6.2);
+        assertThat(response.getLongitude()).isEqualTo(106.8);
+        assertThat(response.getInstagram()).isEqualTo("@nuy");
+        verify(fileUseCase).upload(any(), any(), any());
         verify(settingRepositoryPort).save(existing);
     }
 }

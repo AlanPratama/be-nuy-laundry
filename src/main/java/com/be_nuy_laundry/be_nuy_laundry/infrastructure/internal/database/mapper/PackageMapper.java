@@ -50,11 +50,17 @@ public class PackageMapper {
         pkg.setCreatedAt(entity.getCreatedAt());
         pkg.setUpdatedAt(entity.getUpdatedAt());
 
-//        if (ValueUtil.hasValueList(entity.getBenefits()))
-//            pkg.setBenefits(PackageBenefitMapper.getBenefitModelList(entity.getBenefits()));
-//
-//        if (Hibernate.isInitialized(entity.getTransactionDetails()) && ValueUtil.hasValueList(entity.getTransactionDetails()))
-//            pkg.setTransactionDetails(TransactionDetailMapper.mapToDomainList(entity.getTransactionDetails()));
+        if (org.hibernate.Hibernate.isInitialized(entity.getBenefits()) && com.be_nuy_laundry.be_nuy_laundry.common.util.ValueUtil.hasValueList(entity.getBenefits())) {
+            List<com.be_nuy_laundry.be_nuy_laundry.domain.model.BenefitModel> benefitModels = PackageBenefitMapper.getBenefitModelList(entity.getBenefits());
+            java.util.Map<String, com.be_nuy_laundry.be_nuy_laundry.domain.model.BenefitModel> distinctMap = new java.util.LinkedHashMap<>();
+            for (com.be_nuy_laundry.be_nuy_laundry.domain.model.BenefitModel bm : benefitModels) {
+                if (bm != null && bm.getId() != null) {
+                    distinctMap.putIfAbsent(bm.getId(), bm);
+                }
+            }
+            pkg.setBenefits(new java.util.ArrayList<>(distinctMap.values()));
+            pkg.setBenefitIds(new java.util.ArrayList<>(distinctMap.keySet()));
+        }
 
         return pkg;
     }

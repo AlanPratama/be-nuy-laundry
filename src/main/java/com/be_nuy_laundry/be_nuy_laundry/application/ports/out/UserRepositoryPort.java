@@ -13,4 +13,5 @@ public interface UserRepositoryPort {
     Optional<UserModel> findByUsername(String username);
     Page<UserModel> findAll(UserFilter userFilter, Pageable pageable);
     void deleteById(String id);
+    com.be_nuy_laundry.be_nuy_laundry.presentation.dtos.response.UserMetricsDTO getMetrics();
 }

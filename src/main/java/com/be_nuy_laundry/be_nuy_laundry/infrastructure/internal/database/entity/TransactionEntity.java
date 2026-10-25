@@ -32,6 +32,13 @@ public class TransactionEntity extends BaseEntity {
     @Column(nullable = false)
     private TransactionStatus status;
 
+    @Column(name = "down_payment", nullable = false)
+    private BigDecimal downPayment = BigDecimal.ZERO;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "payment_status", nullable = false)
+    private com.be_nuy_laundry.be_nuy_laundry.infrastructure.internal.database.entity.enumrated.PaymentStatus paymentStatus = com.be_nuy_laundry.be_nuy_laundry.infrastructure.internal.database.entity.enumrated.PaymentStatus.UNPAID;
+
     @Column(nullable = false)
     private String customerName;
 

@@ -7,10 +7,12 @@ import com.be_nuy_laundry.be_nuy_laundry.presentation.dtos.request.setting.Setti
 import com.be_nuy_laundry.be_nuy_laundry.presentation.dtos.response.setting.SettingResponseDTO;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequestMapping({"/api/v1/outlet/profile", "/api/v1/settings"})
@@ -28,9 +30,18 @@ public class SettingController {
         return ResponseUtil.success(SUCCESS_RETRIEVE_DATA_MSG, settingUseCase.getSetting());
     }
 
-    @PutMapping
+    @PutMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     public ResponseEntity<ApiResponse<SettingResponseDTO>> updateSetting(@Valid @RequestBody SettingRequestDTO request) {
+        return ResponseUtil.success(SUCCESS_UPDATE_DATA_MSG, settingUseCase.updateSetting(request));
+    }
+
+    @PutMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
+    public ResponseEntity<ApiResponse<SettingResponseDTO>> updateSettingMultipart(
+            @RequestPart("request") @Valid SettingRequestDTO request,
+            @RequestPart(value = "file", required = false) MultipartFile file) {
+        request.setFile(file);
         return ResponseUtil.success(SUCCESS_UPDATE_DATA_MSG, settingUseCase.updateSetting(request));
     }
 

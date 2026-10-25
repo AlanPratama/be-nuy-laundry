@@ -24,6 +24,8 @@ public class UserUpdateRequestDTO {
 
     private Boolean isActive;
 
+    private Boolean removeProfilePicture;
+
     @JsonIgnore
     MultipartFile file;
 

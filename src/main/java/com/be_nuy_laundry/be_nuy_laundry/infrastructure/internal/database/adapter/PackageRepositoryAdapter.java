@@ -30,16 +30,32 @@ public class PackageRepositoryAdapter implements PackageRepositoryPort {
 
     @Override
     public PackageModel save(PackageModel pkg) {
-        PackageEntity packageEntity = PackageMapper.mapToEntity(pkg);
+        PackageEntity packageEntity;
+        if (pkg.getId() != null) {
+            packageEntity = packageJpaRepository.findById(pkg.getId())
+                    .orElseGet(() -> PackageMapper.mapToEntity(pkg));
+            packageEntity.setName(pkg.getName());
+            packageEntity.setDescription(pkg.getDescription());
+            packageEntity.setType(pkg.getType());
+            packageEntity.setPrice(pkg.getPrice());
+            packageEntity.setDaysEstimation(pkg.getDaysEstimation());
+            packageEntity.setPhoto(pkg.getPhoto());
+        } else {
+            packageEntity = PackageMapper.mapToEntity(pkg);
+        }
 
-        List<BenefitEntity> validBenefitEntities = benefitJpaRepository.findAllById(pkg.getBenefitIds());
+        List<String> distinctBenefitIds = (pkg.getBenefitIds() == null)
+                ? List.of()
+                : pkg.getBenefitIds().stream().filter(java.util.Objects::nonNull).distinct().toList();
 
-        if (validBenefitEntities.size() != pkg.getBenefitIds().size())
+        List<BenefitEntity> validBenefitEntities = distinctBenefitIds.isEmpty()
+                ? List.of()
+                : benefitJpaRepository.findAllById(distinctBenefitIds);
+
+        if (validBenefitEntities.size() != distinctBenefitIds.size())
             throw new DataNotFoundException("Beberapa benefit ID tidak ditemukan");
 
-        if (packageEntity.getId() != null) {
-            packageEntity.clearBenefits();
-        }
+        packageEntity.clearBenefits();
 
         for (BenefitEntity benefitEntity : validBenefitEntities) {
             packageEntity.addBenefit(benefitEntity);
@@ -90,5 +106,14 @@ public class PackageRepositoryAdapter implements PackageRepositoryPort {
         packageJpaRepository.deleteById(id);
     }
 
+    @Override
+    public com.be_nuy_laundry.be_nuy_laundry.presentation.dtos.response.packages.PackageMetricsDTO getMetrics() {
+        return com.be_nuy_laundry.be_nuy_laundry.presentation.dtos.response.packages.PackageMetricsDTO.builder()
+                .totalPackages(packageJpaRepository.count())
+                .activePackages(packageJpaRepository.count())
+                .weightPackages(packageJpaRepository.countByType(com.be_nuy_laundry.be_nuy_laundry.infrastructure.internal.database.entity.enumrated.PackageType.WEIGHT))
+                .piecePackages(packageJpaRepository.countByType(com.be_nuy_laundry.be_nuy_laundry.infrastructure.internal.database.entity.enumrated.PackageType.PCS))
+                .build();
+    }
 }
 

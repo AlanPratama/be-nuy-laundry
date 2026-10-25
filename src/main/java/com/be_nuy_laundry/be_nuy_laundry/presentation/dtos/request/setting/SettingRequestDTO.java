@@ -29,4 +29,17 @@ public class SettingRequestDTO {
 
     private String receiptFooterNote;
 
+    private String logoUrl;
+
+    private Double latitude;
+
+    private Double longitude;
+
+    private String googleMapsUrl;
+
+    private String instagram;
+
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    private org.springframework.web.multipart.MultipartFile file;
+
 }

@@ -170,6 +170,14 @@ class PackageServiceImplTest {
     }
 
     @Test
+    @DisplayName("givenNullOrEmptyIds_whenGetPackageByIds_thenReturnEmptyMap")
+    void givenNullOrEmptyIds_whenGetPackageByIds_thenReturnEmptyMap() {
+        assertThat(packageService.getPackageByIds(null)).isEmpty();
+        assertThat(packageService.getPackageByIds(java.util.Collections.emptyList())).isEmpty();
+        assertThat(packageService.getPackageByIds(java.util.List.of("", "   "))).isEmpty();
+    }
+
+    @Test
     @DisplayName("givenMismatchedIdsCount_whenGetPackageByIds_thenThrowDataNotFoundException")
     void givenMismatchedIdsCount_whenGetPackageByIds_thenThrowDataNotFoundException() {
         PackageModel pkg1 = TestDataBuilder.createSamplePackage();

@@ -31,28 +31,30 @@ public class MinioAdapter implements FileStoragePort {
                     BucketExistsArgs.builder().bucket(bucketName).build());
 
             if (!found) {
-//                minioClient.setBucketPolicy(
-//                        SetBucketPolicyArgs.builder()
-//                                .bucket(bucketName)
-//                                .config("""
-//                {
-//                  "Version": "2012-10-17",
-//                  "Statement": [
-//                    {
-//                      "Effect": "Allow",
-//                      "Principal": "*",
-//                      "Action": ["s3:GetObject"],
-//                      "Resource": ["arn:aws:s3:::%s/*"]
-//                    }
-//                  ]
-//                }
-//                """.formatted(bucketName))
-//                                .build()
-//                );
-
-
                 minioClient.makeBucket(
                         MakeBucketArgs.builder().bucket(bucketName).build());
+            }
+
+            try {
+                minioClient.setBucketPolicy(
+                        SetBucketPolicyArgs.builder()
+                                .bucket(bucketName)
+                                .config("""
+                {
+                  "Version": "2012-10-17",
+                  "Statement": [
+                    {
+                      "Effect": "Allow",
+                      "Principal": "*",
+                      "Action": ["s3:GetObject"],
+                      "Resource": ["arn:aws:s3:::%s/*"]
+                    }
+                  ]
+                }
+                """.formatted(bucketName))
+                                .build()
+                );
+            } catch (Exception ignored) {
             }
 
         } catch (Exception e) {

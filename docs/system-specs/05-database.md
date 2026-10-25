@@ -28,6 +28,9 @@ Sistem menggunakan **Liquibase** untuk version control skema basis data. Master 
 | **013** | `013-add-performance-indexes.yaml` | Penambahan 10 indeks B-Tree foreign key & filter performa (PERF-06). |
 | **014** | `014-add-trigram-gin-indexes.yaml` | Pengaktifan ekstensi `pg_trgm` dan indeks GIN trigram `customers(name, address)` (OPT-03). |
 | **015** | `015-create-settings.yaml` | Pembuatan tabel konfigurasi outlet & operasional `settings`. |
+| **016** | `016-add-outlet-extra-fields.yaml` | Penambahan kolom `logo_url`, `instagram`, `latitude`, `longitude`, dan `google_maps_url` pada tabel `settings`. |
+| **017** | `017-add-down-payment-transactions.yaml` | Penambahan kolom `payment_status` dan `down_payment` pada tabel `transactions`. |
+| **018** | `018-create-articles.yaml` | Pembuatan tabel `articles` untuk Content Management System (CMS) artikel & tips edukasi laundry. |
 
 ---
 
@@ -264,6 +267,8 @@ Menyimpan transaksi header pesanan laundry.
 | `target_date` | TIMESTAMP | NO | Estimasi tanggal pesanan harus selesai. |
 | `deliveredDate` | TIMESTAMP | YES | Tanggal pesanan diserahkan ke pelanggan (*camelCase name*). |
 | `status` | VARCHAR(50) | NO | Status pesanan: `IN_PROGRESS`, `DONE`, `CANCELED`. |
+| `payment_status` | VARCHAR(50) | NO | Status pembayaran: `UNPAID`, `DOWN_PAYMENT`, `PAID`. |
+| `down_payment` | DECIMAL(19,2) | NO | Nominal uang muka / panjar yang telah dibayarkan pelanggan (default `0.00`). |
 | `customer_name` | VARCHAR(255) | NO | Snapshot nama pelanggan saat order dibuat. |
 | `customer_phone` | VARCHAR(50) | YES | Snapshot nomor telepon pelanggan saat order dibuat. |
 | `customer_address`| TEXT | YES | Snapshot alamat pelanggan saat order dibuat. |
@@ -324,5 +329,32 @@ Menyimpan konfigurasi profil outlet, jam operasional, radius antar-jemput, dan c
 | `free_radius_km` | INT4 | YES | Radius gratis antar-jemput cucian dalam kilometer. |
 | `extra_cost_per_km` | INT4 | YES | Biaya tambahan per kilometer di luar radius gratis. |
 | `receipt_footer_note` | TEXT | YES | Catatan penutup yang dicetak pada struk / nota pelanggan. |
+| `logo_url` | VARCHAR(255) | YES | Path foto/logo resmi outlet di MinIO. |
+| `instagram` | VARCHAR(100) | YES | Akun / handle media sosial Instagram outlet. |
+| `latitude` | DECIMAL(10,8) | YES | Koordinat garis lintang (latitude) outlet untuk peta. |
+| `longitude` | DECIMAL(11,8) | YES | Koordinat garis bujur (longitude) outlet untuk peta. |
+| `google_maps_url` | TEXT | YES | Tautan embed atau URL lokasi Google Maps outlet. |
 | `created_at` | TIMESTAMP | NO | Waktu inisialisasi pengaturan. |
 | `updated_at` | TIMESTAMP | NO | Waktu terakhir konfigurasi diperbarui. |
+
+---
+
+### 3.10. Tabel `articles`
+Menyimpan artikel edukasi, tips perawatan pakaian, panduan bahan, dan promo untuk pelanggan.
+
+| Kolom | Tipe Data | Nullable | Keterangan / Constraint |
+| :--- | :--- | :---: | :--- |
+| `id` | VARCHAR(36) | NO | Primary Key (UUID String). |
+| `title` | VARCHAR(255) | NO | Judul artikel edukasi / promo. |
+| `slug` | VARCHAR(255) | NO | Unique URL slug artikel (auto-generated & URL friendly). |
+| `category` | VARCHAR(50) | NO | Kategori: `TIPS_PERAWATAN`, `PANDUAN_BAHAN`, `INFO_PROMO`, `INFO_MENARIK`. |
+| `excerpt` | TEXT | YES | Ringkasan / kutipan artikel untuk tampilan kartu & preview. |
+| `content` | TEXT | NO | Konten lengkap artikel berformat HTML WYSIWYG Medium-style. |
+| `thumbnail_url` | VARCHAR(255) | YES | Path berkas foto cover/sampul artikel di MinIO Storage. |
+| `reading_time` | VARCHAR(50) | YES | Estimasi waktu baca (contoh: `3 menit baca`). |
+| `is_published` | BOOLEAN | NO | Status publikasi: `true` (Online/Published) atau `false` (Draf/Offline). |
+| `author_id` | VARCHAR(36) | YES | FK ke `users(id)` penulis/admin (`ON DELETE SET NULL`). |
+| `published_at` | TIMESTAMP | YES | Waktu pertama kali artikel diterbitkan ke publik. |
+| `created_at` | TIMESTAMP | NO | Waktu draf artikel dibuat. |
+| `updated_at` | TIMESTAMP | NO | Waktu pembaruan konten artikel terakhir. |
+

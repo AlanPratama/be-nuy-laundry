@@ -886,6 +886,29 @@ def build_collection():
         description="Memperbarui status pengerjaan cucian (IN_PROGRESS -> DONE)."
     ))
 
+    patch_status_payload = {
+        "status": "DONE"
+    }
+    patch_status_tests = [
+        "pm.test('Status code is 200', function () {",
+        "    pm.response.to.have.status(200);",
+        "});",
+        "pm.test('Transaction status updated via dedicated endpoint', function () {",
+        "    var res = pm.response.json();",
+        "    pm.expect(res.data.status).to.eql('DONE');",
+        "});"
+    ]
+    tx_items.append(make_req(
+        name="05. Update Transaction Status Only (PATCH Dedicated)",
+        method="PATCH",
+        url_path="/api/v1/transactions/{{transactionId}}/status",
+        headers={"Content-Type": "application/json"},
+        auth_bearer="{{staffToken}}",
+        body={"mode": "raw", "raw": json.dumps(patch_status_payload, indent=2)},
+        tests=patch_status_tests,
+        description="Endpoint khusus untuk langsung memperbarui status transaksi tanpa roundtrip fetch rincian."
+    ))
+
     items.append({"name": "06. Laundry Transactions", "item": tx_items})
 
     # -------------------------------------------------------------
@@ -956,10 +979,90 @@ def build_collection():
         description="Menghapus order transaksi laundry (soft/hard delete)."
     ))
 
+    view_file_tests = [
+        "pm.test('Status code is 200 or 404', function () {",
+        "    pm.expect(pm.response.code).to.be.oneOf([200, 404]);",
+        "});"
+    ]
+    file_items.append(make_req(
+        name="04. View Uploaded File via Proxy",
+        method="GET",
+        url_path="/api/v1/files/view",
+        query_params={"path": "sample.jpg"},
+        tests=view_file_tests,
+        description="Mengunduh dan merender file gambar/dokumen dari MinIO storage via proxy backend."
+    ))
+
     items.append({"name": "07. Transaction Details & Files", "item": file_items})
 
     # -------------------------------------------------------------
-    # FOLDER 08: Health & Monitoring
+    # FOLDER 08: Dashboard & Metrics
+    # -------------------------------------------------------------
+    dashboard_items = []
+    dashboard_tests = [
+        "pm.test('Status code is 200', function () {",
+        "    pm.response.to.have.status(200);",
+        "});",
+        "pm.test('Metrics object contains revenue and orders', function () {",
+        "    var res = pm.response.json();",
+        "    pm.expect(res.data.todayRevenue).to.not.be.undefined;",
+        "    pm.expect(res.data.activeOrdersCount).to.be.a('number');",
+        "});"
+    ]
+    dashboard_items.append(make_req(
+        name="01. Get Dashboard Metrics",
+        method="GET",
+        url_path="/api/v1/dashboard/metrics",
+        auth_bearer="{{staffToken}}",
+        tests=dashboard_tests,
+        description="Mengambil statistik pendapatan hari ini, berat cucian, antrian ekspres, dan status mesin."
+    ))
+    items.append({"name": "08. Dashboard & Metrics", "item": dashboard_items})
+
+    # -------------------------------------------------------------
+    # FOLDER 09: Outlet Profile & Settings
+    # -------------------------------------------------------------
+    setting_items = []
+    setting_payload = {
+        "outletName": "Nuy Laundry Central",
+        "address": "Jl. Mawar No. 12, Jakarta",
+        "phone": "081234567890",
+        "openHour": "07:00",
+        "closeHour": "21:00",
+        "freeRadiusKm": 3,
+        "extraCostPerKm": 2500,
+        "receiptFooterNote": "Terima kasih telah mempercayakan cucian Anda kepada kami."
+    }
+    setting_tests = [
+        "pm.test('Status code is 200', function () {",
+        "    pm.response.to.have.status(200);",
+        "});",
+        "pm.test('Setting data matches payload', function () {",
+        "    var res = pm.response.json();",
+        "    pm.expect(res.data.outletName).to.eql('Nuy Laundry Central');",
+        "});"
+    ]
+    setting_items.append(make_req(
+        name="01. Get Outlet Settings",
+        method="GET",
+        url_path="/api/v1/outlet/profile",
+        tests=setting_tests,
+        description="Mengambil profil outlet laundry (alamat, jam operasional, radius antar)."
+    ))
+    setting_items.append(make_req(
+        name="02. Update Outlet Settings (Admin)",
+        method="PUT",
+        url_path="/api/v1/outlet/profile",
+        headers={"Content-Type": "application/json"},
+        auth_bearer="{{adminToken}}",
+        body={"mode": "raw", "raw": json.dumps(setting_payload, indent=2)},
+        tests=setting_tests,
+        description="Memperbarui profil dan konfigurasi outlet laundry."
+    ))
+    items.append({"name": "09. Outlet Profile & Settings", "item": setting_items})
+
+    # -------------------------------------------------------------
+    # FOLDER 10: Health & Monitoring
     # -------------------------------------------------------------
     health_items = []
     health_tests = [
@@ -978,10 +1081,10 @@ def build_collection():
         tests=health_tests,
         description="Monitoring status kesehatan aplikasi backend Spring Boot (Liveness & Readiness probe)."
     ))
-    items.append({"name": "08. Health & Monitoring", "item": health_items})
+    items.append({"name": "10. Health & Monitoring", "item": health_items})
 
     # -------------------------------------------------------------
-    # FOLDER 09: Session Termination
+    # FOLDER 11: Session Termination
     # -------------------------------------------------------------
     logout_items = []
     logout_tests = [

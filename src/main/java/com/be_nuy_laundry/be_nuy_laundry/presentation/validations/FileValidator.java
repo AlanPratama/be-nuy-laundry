@@ -10,7 +10,11 @@ import java.util.List;
 public class FileValidator implements ConstraintValidator<ValidImage, MultipartFile> {
 
     private boolean isRequired;
-    private static final List<String> ALLOWED_CONTENT_TYPES = Arrays.asList("image/jpeg", "image/png");
+    private static final List<String> ALLOWED_CONTENT_TYPES = Arrays.asList(
+            "image/jpeg",
+            "image/png",
+            "image/webp"
+    );
 
     @Override
     public void initialize(ValidImage constraintAnnotation) {

@@ -98,4 +98,21 @@ class RedisCacheServiceTest {
         assertThat(redisCacheService.exists("existKey")).isTrue();
         assertThat(redisCacheService.exists("notExistKey")).isFalse();
     }
+
+    @Test
+    @DisplayName("givenPattern_whenDeleteByPattern_thenDeleteKeysWhenFound")
+    void givenPattern_whenDeleteByPattern_thenDeleteKeysWhenFound() {
+        java.util.Set<String> keys = java.util.Set.of("key1", "key2");
+        when(redisTemplate.keys("prefix:*")).thenReturn(keys);
+
+        redisCacheService.deleteByPattern("prefix:*");
+
+        verify(redisTemplate).delete(keys);
+
+        when(redisTemplate.keys("empty:*")).thenReturn(java.util.Collections.emptySet());
+        redisCacheService.deleteByPattern("empty:*");
+
+        when(redisTemplate.keys("null:*")).thenReturn(null);
+        redisCacheService.deleteByPattern("null:*");
+    }
 }

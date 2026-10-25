@@ -97,14 +97,21 @@ public class UserServiceImpl implements UserUseCase {
         existingModel.setUsername(requestDTO.getUsername());
         existingModel.setPhone(requestDTO.getPhone());
         existingModel.setAddress(requestDTO.getAddress());
-        existingModel.setRole(ValueUtil.orElseUserRole(requestDTO.getRole(), UserRole.STAFF));
+        if (requestDTO.getRole() != null) {
+            existingModel.setRole(requestDTO.getRole());
+        }
         if (requestDTO.getIsActive() != null) {
             existingModel.setIsActive(requestDTO.getIsActive());
         }
 
         String filePath = existingModel.getProfilePicture();
 
-        if (ValueUtil.hasValueMultipartFile(requestDTO.getFile())) {
+        if (Boolean.TRUE.equals(requestDTO.getRemoveProfilePicture())) {
+            if (ValueUtil.hasValueString(existingModel.getProfilePicture())) {
+                fileUseCase.delete(existingModel.getProfilePicture());
+            }
+            filePath = null;
+        } else if (ValueUtil.hasValueMultipartFile(requestDTO.getFile())) {
             if (ValueUtil.hasValueString(existingModel.getProfilePicture()))
                 fileUseCase.delete(existingModel.getProfilePicture());
 
@@ -138,6 +145,11 @@ public class UserServiceImpl implements UserUseCase {
         existingUserModel.setPassword(passwordEncoder.encode(newPassword));
 
         return UserMapper.mapDomainToResponse(userRepositoryPort.save(existingUserModel));
+    }
+
+    @Override
+    public com.be_nuy_laundry.be_nuy_laundry.presentation.dtos.response.UserMetricsDTO getMetrics() {
+        return userRepositoryPort.getMetrics();
     }
 
 }

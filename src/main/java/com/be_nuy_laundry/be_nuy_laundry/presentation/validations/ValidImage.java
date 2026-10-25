@@ -8,7 +8,7 @@ import java.lang.annotation.*;
 @Documented
 @Target({ElementType.PARAMETER, ElementType.FIELD, ElementType.TYPE_USE})
 @Retention(RetentionPolicy.RUNTIME)
-@Constraint(validatedBy = FileValidator.class)
+@Constraint(validatedBy = {FileValidator.class, FileListValidator.class})
 public @interface ValidImage {
 
     String message() default "File tidak valid. Hanya menerima JPG/PNG.";

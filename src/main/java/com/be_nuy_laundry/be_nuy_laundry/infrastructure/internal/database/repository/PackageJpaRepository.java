@@ -19,6 +19,10 @@ public interface PackageJpaRepository extends JpaRepository<PackageEntity, Strin
     @EntityGraph(attributePaths = {"benefits", "benefits.benefit"})
     Page<PackageEntity> findAll(Pageable pageable);
 
+    @Override
+    @EntityGraph(attributePaths = {"benefits", "benefits.benefit"})
+    Page<PackageEntity> findAll(org.springframework.data.jpa.domain.Specification<PackageEntity> spec, Pageable pageable);
+
     @EntityGraph(attributePaths = {"benefits", "benefits.benefit"})
     Optional<PackageEntity> findById(String id);
 
@@ -28,4 +32,7 @@ public interface PackageJpaRepository extends JpaRepository<PackageEntity, Strin
     @EntityGraph(attributePaths = {"benefits", "benefits.benefit"})
     @Query("SELECT P FROM PackageEntity P JOIN PackageBenefitEntity PB ON PB.pkg = P WHERE PB.benefit.id = :benefitId")
     List<PackageEntity> findByBenefitId(@Param("benefitId") String benefitId);
+
+    @Query("SELECT COUNT(p) FROM PackageEntity p WHERE p.type = :type")
+    Long countByType(@Param("type") com.be_nuy_laundry.be_nuy_laundry.infrastructure.internal.database.entity.enumrated.PackageType type);
 }

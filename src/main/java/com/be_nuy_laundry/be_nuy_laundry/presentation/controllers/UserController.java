@@ -47,9 +47,16 @@ public class UserController {
         return ResponseUtil.success(SUCCESS_CREATE_DATA_MSG, created);
     }
 
-    @GetMapping("/{id}")
+    @GetMapping("/metrics")
     @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
+    public ResponseEntity<ApiResponse<com.be_nuy_laundry.be_nuy_laundry.presentation.dtos.response.UserMetricsDTO>> getMetrics() {
+        return ResponseUtil.success(SUCCESS_RETRIEVE_DATA_MSG, userUseCase.getMetrics());
+    }
+
+    @GetMapping("/{id}")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ApiResponse<UserResponseDTO>> getById(@PathVariable String id) {
+        validateUserAccess(id);
         return ResponseUtil.success(SUCCESS_RETRIEVE_DATA_MSG, userUseCase.getUserById(id));
     }
 
@@ -78,12 +85,13 @@ public class UserController {
     }
 
     @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ApiResponse<UserResponseDTO>> update(
             @PathVariable String id,
             @RequestPart("request") @Valid UserUpdateRequestDTO request,
             @RequestPart(value = "file", required = false) @ValidImage(required = false) MultipartFile file
     ) {
+        validateUserAccess(id);
         request.setFile(file);
 
         return ResponseUtil.success(SUCCESS_UPDATE_DATA_MSG, userUseCase.updateUser(id, request));
@@ -97,9 +105,39 @@ public class UserController {
     }
 
     @PatchMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
-    public ResponseEntity<ApiResponse<UserResponseDTO>> resetPassword(@PathVariable String id, @Valid @RequestBody UserResetPasswordRequestDTO request) {
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<ApiResponse<UserResponseDTO>> resetPassword(
+            @PathVariable String id,
+            @Valid @RequestBody UserResetPasswordRequestDTO request
+    ) {
+        validateUserAccess(id);
         return ResponseUtil.success(SUCCESS_RESET_PASSWORD_MSG, userUseCase.resetPassword(id, request));
+    }
+
+    private void validateUserAccess(String userId) {
+        org.springframework.security.core.Authentication auth =
+                org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || !auth.isAuthenticated() || "anonymousUser".equals(auth.getPrincipal())) {
+            return;
+        }
+        boolean isSuperAdmin = auth.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_SUPER_ADMIN"));
+        boolean isAdmin = auth.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+
+        if (!isSuperAdmin) {
+            UserResponseDTO existing = userUseCase.getUserById(userId);
+            boolean isSelf = existing.getUsername().equals(auth.getName());
+            if (!isSelf) {
+                if (isAdmin) {
+                    if (existing.getRole() != com.be_nuy_laundry.be_nuy_laundry.infrastructure.internal.database.entity.enumrated.UserRole.STAFF) {
+                        throw new com.be_nuy_laundry.be_nuy_laundry.common.exception.ForbiddenException("Admin hanya diperbolehkan mengelola data Staff");
+                    }
+                } else {
+                    throw new com.be_nuy_laundry.be_nuy_laundry.common.exception.ForbiddenException("Staff tidak memiliki izin untuk mengubah data pengguna lain");
+                }
+            }
+        }
     }
 
 }

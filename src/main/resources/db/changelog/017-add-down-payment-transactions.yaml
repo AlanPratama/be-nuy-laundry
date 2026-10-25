@@ -1,0 +1,16 @@
+databaseChangeLog:
+  - changeSet:
+      id: 017-add-down-payment-transactions
+      author: alan
+      changes:
+        - addColumn:
+            tableName: transactions
+            columns:
+              - column:
+                  name: down_payment
+                  type: DECIMAL(19,2)
+                  defaultValueNumeric: 0
+              - column:
+                  name: payment_status
+                  type: VARCHAR(50)
+                  defaultValue: UNPAID

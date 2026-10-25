@@ -1,6 +1,7 @@
 package com.be_nuy_laundry.be_nuy_laundry.infrastructure.internal.database.mapper;
 
 import com.be_nuy_laundry.be_nuy_laundry.domain.model.TransactionDetailModel;
+import com.be_nuy_laundry.be_nuy_laundry.infrastructure.internal.database.entity.PackageEntity;
 import com.be_nuy_laundry.be_nuy_laundry.infrastructure.internal.database.entity.TransactionDetailEntity;
 
 import java.util.ArrayList;
@@ -24,6 +25,14 @@ public class TransactionDetailMapper {
         entity.setDeliveredDate(model.getDeliveredDate());
         entity.setCreatedAt(model.getCreatedAt());
         entity.setUpdatedAt(model.getUpdatedAt());
+
+        if (model.getPkg() != null) {
+            entity.setPkg(PackageMapper.mapToEntity(model.getPkg()));
+        } else if (model.getPackageId() != null) {
+            PackageEntity pkg = new PackageEntity();
+            pkg.setId(model.getPackageId());
+            entity.setPkg(pkg);
+        }
 
         return entity;
     }
@@ -54,8 +63,10 @@ public class TransactionDetailMapper {
         model.setCreatedAt(entity.getCreatedAt());
         model.setUpdatedAt(entity.getUpdatedAt());
 
-        if (entity.getPkg() != null)
+        if (entity.getPkg() != null) {
             model.setPackageId(entity.getPkg().getId());
+            model.setPkg(PackageMapper.mapToDomain(entity.getPkg()));
+        }
 
         if (entity.getTransaction() != null)
             model.setTransactionId(entity.getTransaction().getId());

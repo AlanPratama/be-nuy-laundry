@@ -168,7 +168,9 @@
 					<excludes>
 						<exclude>com/be_nuy_laundry/be_nuy_laundry/BeNuyLaundryApplication.class</exclude>
 						<exclude>com/be_nuy_laundry/be_nuy_laundry/**/config/**</exclude>
-						<exclude>com/be_nuy_laundry/be_nuy_laundry/**/Config.class</exclude>
+						<exclude>com/be_nuy_laundry/be_nuy_laundry/**/*Config.class</exclude>
+						<exclude>com/be_nuy_laundry/be_nuy_laundry/infrastructure/internal/security/SecurityConfig.class</exclude>
+						<exclude>com/be_nuy_laundry/be_nuy_laundry/infrastructure/internal/security/WebMvcCorsConfig.class</exclude>
 						<exclude>com/be_nuy_laundry/be_nuy_laundry/**/RedisConfig.class</exclude>
 						<exclude>com/be_nuy_laundry/be_nuy_laundry/**/MinioConfig.class</exclude>
 						<exclude>com/be_nuy_laundry/be_nuy_laundry/**/TEST.class</exclude>

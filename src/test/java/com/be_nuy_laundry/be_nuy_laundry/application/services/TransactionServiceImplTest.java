@@ -21,8 +21,10 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -129,6 +131,78 @@ class TransactionServiceImplTest {
     }
 
     @Test
+    @DisplayName("givenSaveFailsAndFileDeletionFails_whenCreateTransaction_thenIgnoreFileDeletionException")
+    void givenSaveFailsAndFileDeletionFails_whenCreateTransaction_thenIgnoreFileDeletionException() {
+        PackageModel pkg = TestDataBuilder.createSamplePackage();
+        CustomerModel customer = TestDataBuilder.createSampleCustomer();
+        UserModel user = TestDataBuilder.createSampleUser();
+
+        TransactionDetailRequestDTO detailDTO = new TransactionDetailRequestDTO();
+        detailDTO.setPackageId(pkg.getId());
+        detailDTO.setQuantity(1);
+        detailDTO.setOrderDate(LocalDateTime.now().plusHours(1));
+
+        TransactionRequestDTO request = new TransactionRequestDTO();
+        request.setCustomerId(customer.getId());
+        request.setUserId(user.getId());
+        request.setOrderDate(LocalDateTime.now().plusHours(1));
+        request.setStatus(TransactionStatus.IN_PROGRESS);
+        request.setTransactionDetails(List.of(detailDTO));
+
+        TransactionFileModel uploadedFile = new TransactionFileModel();
+        uploadedFile.setFilePath("transactions/INV-001/file.jpg");
+
+        when(packageUseCase.getPackageByIds(any())).thenReturn(Map.of(pkg.getId(), pkg));
+        when(customerUseCase.getCustomerById(any())).thenReturn(customer);
+        when(userUseCase.getDomainUserById(any())).thenReturn(user);
+        when(transactionFileUseCase.setTransactionFiles(any(), any(), any(), any(), any(), any()))
+                .thenReturn(List.of(uploadedFile));
+        when(transactionRepositoryPort.save(any(TransactionModel.class)))
+                .thenThrow(new RuntimeException("Database error"));
+        doThrow(new RuntimeException("MinIO error")).when(fileUseCase).deleteObjects(any());
+
+        assertThatThrownBy(() -> transactionService.createTransaction(request))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessage("Database error");
+
+        verify(fileUseCase).deleteObjects(List.of("transactions/INV-001/file.jpg"));
+    }
+
+    @Test
+    @DisplayName("givenSaveFailsAndNoFiles_whenCreateTransaction_thenDoNotCallDeleteObjects")
+    void givenSaveFailsAndNoFiles_whenCreateTransaction_thenDoNotCallDeleteObjects() {
+        PackageModel pkg = TestDataBuilder.createSamplePackage();
+        CustomerModel customer = TestDataBuilder.createSampleCustomer();
+        UserModel user = TestDataBuilder.createSampleUser();
+
+        TransactionDetailRequestDTO detailDTO = new TransactionDetailRequestDTO();
+        detailDTO.setPackageId(pkg.getId());
+        detailDTO.setQuantity(1);
+        detailDTO.setOrderDate(LocalDateTime.now().plusHours(1));
+
+        TransactionRequestDTO request = new TransactionRequestDTO();
+        request.setCustomerId(customer.getId());
+        request.setUserId(user.getId());
+        request.setOrderDate(LocalDateTime.now().plusHours(1));
+        request.setStatus(TransactionStatus.IN_PROGRESS);
+        request.setTransactionDetails(List.of(detailDTO));
+
+        when(packageUseCase.getPackageByIds(any())).thenReturn(Map.of(pkg.getId(), pkg));
+        when(customerUseCase.getCustomerById(any())).thenReturn(customer);
+        when(userUseCase.getDomainUserById(any())).thenReturn(user);
+        when(transactionFileUseCase.setTransactionFiles(any(), any(), any(), any(), any(), any()))
+                .thenReturn(Collections.emptyList());
+        when(transactionRepositoryPort.save(any(TransactionModel.class)))
+                .thenThrow(new RuntimeException("Database error"));
+
+        assertThatThrownBy(() -> transactionService.createTransaction(request))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessage("Database error");
+
+        verifyNoInteractions(fileUseCase);
+    }
+
+    @Test
     @DisplayName("givenExistingId_whenGetTransactionById_thenReturnResponseDTO")
     void givenExistingId_whenGetTransactionById_thenReturnResponseDTO() {
         TransactionModel trx = TestDataBuilder.createSampleTransaction();
@@ -203,6 +277,114 @@ class TransactionServiceImplTest {
     }
 
     @Test
+    @DisplayName("givenNewDetailWithMissingPackage_whenUpdateTransaction_thenThrowDataNotFoundException")
+    void givenNewDetailWithMissingPackage_whenUpdateTransaction_thenThrowDataNotFoundException() {
+        TransactionModel existingTrx = TestDataBuilder.createSampleTransaction();
+
+        TransactionDetailRequestDTO detailDTO = new TransactionDetailRequestDTO();
+        detailDTO.setId(null);
+        detailDTO.setPackageId("unknown-pkg");
+
+        TransactionRequestDTO updateRequest = new TransactionRequestDTO();
+        updateRequest.setTransactionDetails(List.of(detailDTO));
+
+        when(transactionRepositoryPort.findById(existingTrx.getId())).thenReturn(Optional.of(existingTrx));
+        when(packageUseCase.getPackageByIds(any())).thenReturn(Collections.emptyMap());
+        when(transactionDetailUseCase.getByTransactionIdMap(existingTrx.getId())).thenReturn(Collections.emptyMap());
+
+        assertThatThrownBy(() -> transactionService.updateTransaction(existingTrx.getId(), updateRequest))
+                .isInstanceOf(DataNotFoundException.class)
+                .hasMessage("Paket tidak ditemukan");
+    }
+
+    @Test
+    @DisplayName("givenDetailWithExistingPackageAndNullQuantity_whenUpdateTransaction_thenUseFallbackValues")
+    void givenDetailWithExistingPackageAndNullQuantity_whenUpdateTransaction_thenUseFallbackValues() {
+        TransactionModel existingTrx = TestDataBuilder.createSampleTransaction();
+        TransactionDetailModel existingDetail = existingTrx.getTransactionDetails().get(0);
+        PackageModel pkg = TestDataBuilder.createSamplePackage();
+        existingDetail.setPkg(pkg);
+        existingDetail.setQuantity(2);
+        existingDetail.setTotalPrice(BigDecimal.valueOf(16000));
+        existingDetail.setTargetDate(LocalDateTime.now().plusDays(5));
+
+        TransactionDetailRequestDTO detailDTO = new TransactionDetailRequestDTO();
+        detailDTO.setId(existingDetail.getId());
+        detailDTO.setPackageId(null);
+        detailDTO.setQuantity(null); // null quantity -> fallback
+
+        TransactionRequestDTO updateRequest = new TransactionRequestDTO();
+        updateRequest.setStatus(TransactionStatus.IN_PROGRESS);
+        updateRequest.setTransactionDetails(List.of(detailDTO));
+
+        when(transactionRepositoryPort.findById(existingTrx.getId())).thenReturn(Optional.of(existingTrx));
+        when(packageUseCase.getPackageByIds(any())).thenReturn(Collections.emptyMap());
+        when(transactionDetailUseCase.getByTransactionIdMap(existingTrx.getId())).thenReturn(Map.of(existingDetail.getId(), existingDetail));
+        when(transactionRepositoryPort.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        TransactionResponseDTO response = transactionService.updateTransaction(existingTrx.getId(), updateRequest);
+        assertThat(response).isNotNull();
+        assertThat(response.getStatus()).isEqualTo(TransactionStatus.IN_PROGRESS);
+    }
+
+    @Test
+    @DisplayName("givenDetailWithoutPackageAndNullPrice_whenUpdateTransaction_thenFallbackToDefaultPrice")
+    void givenDetailWithoutPackageAndNullPrice_whenUpdateTransaction_thenFallbackToDefaultPrice() {
+        TransactionModel existingTrx = TestDataBuilder.createSampleTransaction();
+        TransactionDetailModel existingDetail = existingTrx.getTransactionDetails().get(0);
+        existingDetail.setPkg(null);
+        existingDetail.setQuantity(0);
+        existingDetail.setTotalPrice(null);
+
+        TransactionDetailRequestDTO detailDTO = new TransactionDetailRequestDTO();
+        detailDTO.setId(existingDetail.getId());
+        detailDTO.setPackageId(null);
+        detailDTO.setQuantity(1);
+
+        TransactionRequestDTO updateRequest = new TransactionRequestDTO();
+        updateRequest.setStatus(TransactionStatus.IN_PROGRESS);
+        updateRequest.setTransactionDetails(List.of(detailDTO));
+
+        when(transactionRepositoryPort.findById(existingTrx.getId())).thenReturn(Optional.of(existingTrx));
+        when(packageUseCase.getPackageByIds(any())).thenReturn(Collections.emptyMap());
+        when(transactionDetailUseCase.getByTransactionIdMap(existingTrx.getId())).thenReturn(Map.of(existingDetail.getId(), existingDetail));
+        when(transactionRepositoryPort.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        TransactionResponseDTO response = transactionService.updateTransaction(existingTrx.getId(), updateRequest);
+        assertThat(response).isNotNull();
+        assertThat(response.getTotalPrice()).isEqualByComparingTo(BigDecimal.valueOf(8000));
+    }
+
+    @Test
+    @DisplayName("givenDetailWithoutPackageAndWithExistingPrice_whenUpdateTransaction_thenCalculateUnitPrice")
+    void givenDetailWithoutPackageAndWithExistingPrice_whenUpdateTransaction_thenCalculateUnitPrice() {
+        TransactionModel existingTrx = TestDataBuilder.createSampleTransaction();
+        TransactionDetailModel existingDetail = existingTrx.getTransactionDetails().get(0);
+        existingDetail.setPkg(null);
+        existingDetail.setQuantity(2);
+        existingDetail.setTotalPrice(BigDecimal.valueOf(20000));
+
+        TransactionDetailRequestDTO detailDTO = new TransactionDetailRequestDTO();
+        detailDTO.setId(existingDetail.getId());
+        detailDTO.setPackageId(null);
+        detailDTO.setQuantity(3);
+
+        TransactionRequestDTO updateRequest = new TransactionRequestDTO();
+        updateRequest.setStatus(TransactionStatus.IN_PROGRESS);
+        updateRequest.setTransactionDetails(List.of(detailDTO));
+
+        when(transactionRepositoryPort.findById(existingTrx.getId())).thenReturn(Optional.of(existingTrx));
+        when(packageUseCase.getPackageByIds(any())).thenReturn(Collections.emptyMap());
+        when(transactionDetailUseCase.getByTransactionIdMap(existingTrx.getId())).thenReturn(Map.of(existingDetail.getId(), existingDetail));
+        when(transactionRepositoryPort.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        TransactionResponseDTO response = transactionService.updateTransaction(existingTrx.getId(), updateRequest);
+        assertThat(response).isNotNull();
+        // 20000 / 2 = 10000 per unit, 10000 * 3 = 30000
+        assertThat(response.getTotalPrice()).isEqualByComparingTo(BigDecimal.valueOf(30000));
+    }
+
+    @Test
     @DisplayName("givenMissingTransaction_whenUpdateTransaction_thenThrowDataNotFoundException")
     void givenMissingTransaction_whenUpdateTransaction_thenThrowDataNotFoundException() {
         when(transactionRepositoryPort.findById("unknown-id")).thenReturn(Optional.empty());
@@ -239,5 +421,37 @@ class TransactionServiceImplTest {
 
         verify(transactionRepositoryPort).deleteById(trx.getId());
         verifyNoInteractions(transactionFileUseCase);
+    }
+
+    @Test
+    @DisplayName("givenValidRequest_whenUpdateTransactionStatus_thenReturnUpdatedResponse")
+    void givenValidRequest_whenUpdateTransactionStatus_thenReturnUpdatedResponse() {
+        TransactionModel existingTrx = TestDataBuilder.createSampleTransaction();
+        existingTrx.setStatus(TransactionStatus.IN_PROGRESS);
+
+        when(transactionRepositoryPort.findById(existingTrx.getId())).thenReturn(Optional.of(existingTrx));
+        when(transactionRepositoryPort.save(any(TransactionModel.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        com.be_nuy_laundry.be_nuy_laundry.presentation.dtos.request.transaction.header.TransactionStatusUpdateRequestDTO request =
+                new com.be_nuy_laundry.be_nuy_laundry.presentation.dtos.request.transaction.header.TransactionStatusUpdateRequestDTO(TransactionStatus.DONE);
+
+        TransactionResponseDTO response = transactionService.updateTransactionStatus(existingTrx.getId(), request);
+
+        assertThat(response).isNotNull();
+        assertThat(response.getStatus()).isEqualTo(TransactionStatus.DONE);
+        verify(transactionRepositoryPort).save(existingTrx);
+    }
+
+    @Test
+    @DisplayName("givenMissingTransaction_whenUpdateTransactionStatus_thenThrowDataNotFoundException")
+    void givenMissingTransaction_whenUpdateTransactionStatus_thenThrowDataNotFoundException() {
+        when(transactionRepositoryPort.findById("unknown-id")).thenReturn(Optional.empty());
+
+        com.be_nuy_laundry.be_nuy_laundry.presentation.dtos.request.transaction.header.TransactionStatusUpdateRequestDTO request =
+                new com.be_nuy_laundry.be_nuy_laundry.presentation.dtos.request.transaction.header.TransactionStatusUpdateRequestDTO(TransactionStatus.DONE);
+
+        assertThatThrownBy(() -> transactionService.updateTransactionStatus("unknown-id", request))
+                .isInstanceOf(DataNotFoundException.class)
+                .hasMessage("Transaksi tidak ditemukan");
     }
 }

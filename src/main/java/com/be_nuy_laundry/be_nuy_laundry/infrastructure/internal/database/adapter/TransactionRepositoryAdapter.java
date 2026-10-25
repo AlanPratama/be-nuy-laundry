@@ -51,4 +51,15 @@ public class TransactionRepositoryAdapter implements TransactionRepositoryPort {
     public void deleteById(String id) {
         transactionJpaRepository.deleteById(id);
     }
+
+    @Override
+    public com.be_nuy_laundry.be_nuy_laundry.presentation.dtos.response.transaction.header.TransactionMetricsDTO getMetrics() {
+        return com.be_nuy_laundry.be_nuy_laundry.presentation.dtos.response.transaction.header.TransactionMetricsDTO.builder()
+                .totalTransactions(transactionJpaRepository.count())
+                .inProgressCount(transactionJpaRepository.countByStatus(com.be_nuy_laundry.be_nuy_laundry.infrastructure.internal.database.entity.enumrated.TransactionStatus.IN_PROGRESS))
+                .doneCount(transactionJpaRepository.countByStatus(com.be_nuy_laundry.be_nuy_laundry.infrastructure.internal.database.entity.enumrated.TransactionStatus.DONE))
+                .canceledCount(transactionJpaRepository.countByStatus(com.be_nuy_laundry.be_nuy_laundry.infrastructure.internal.database.entity.enumrated.TransactionStatus.CANCELED))
+                .totalRevenue(transactionJpaRepository.sumAllTotalPrice())
+                .build();
+    }
 }

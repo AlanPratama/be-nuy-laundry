@@ -16,4 +16,5 @@ public interface PackageRepositoryPort {
     List<PackageModel> findByBenefitId(String benefitId);
     List<PackageModel> findByIds(List<String> ids);
     void deleteById(String id);
+    com.be_nuy_laundry.be_nuy_laundry.presentation.dtos.response.packages.PackageMetricsDTO getMetrics();
 }

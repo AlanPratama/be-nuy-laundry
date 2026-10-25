@@ -11,4 +11,5 @@ public interface CustomerUseCase {
     Page<CustomerModel> getAllCustomers(CustomerFilter customerFilter, Pageable pageable);
     CustomerModel updateCustomer(String id, CustomerModel customerModel);
     void deleteCustomer(String id);
+    com.be_nuy_laundry.be_nuy_laundry.presentation.dtos.response.customer.CustomerMetricsDTO getMetrics();
 }

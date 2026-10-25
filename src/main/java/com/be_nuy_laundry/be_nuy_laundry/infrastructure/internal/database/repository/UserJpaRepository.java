@@ -11,4 +11,10 @@ public interface UserJpaRepository extends JpaRepository<UserEntity, String>, Jp
 
     Optional<UserEntity> findByUsername(@Param("username") String username);
 
+    long countByIsActiveTrue();
+
+    long countByRoleIn(java.util.Collection<com.be_nuy_laundry.be_nuy_laundry.infrastructure.internal.database.entity.enumrated.UserRole> roles);
+
+    long countByRole(com.be_nuy_laundry.be_nuy_laundry.infrastructure.internal.database.entity.enumrated.UserRole role);
+
 }

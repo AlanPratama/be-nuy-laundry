@@ -22,6 +22,11 @@ public class SettingResponseDTO {
     private Integer freeRadiusKm;
     private Integer extraCostPerKm;
     private String receiptFooterNote;
+    private String logoUrl;
+    private Double latitude;
+    private Double longitude;
+    private String googleMapsUrl;
+    private String instagram;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 

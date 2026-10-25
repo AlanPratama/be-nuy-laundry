@@ -140,14 +140,32 @@ class SpecificationsTest {
     }
 
     @Test
-    @DisplayName("TransactionSpecification - basic test")
+    @DisplayName("TransactionSpecification - basic test and full filter")
     void testTransactionSpecification() {
         new TransactionSpecification();
 
-        TransactionFilter filter = TransactionFilter.builder().build();
-        Specification<TransactionEntity> spec = TransactionSpecification.getFilterSpecification(filter);
+        lenient().when(cb.or(any(), any())).thenReturn(predicate);
+        lenient().when(cb.greaterThanOrEqualTo(any(), any(java.time.LocalDateTime.class))).thenReturn(predicate);
+        lenient().when(cb.lessThanOrEqualTo(any(), any(java.time.LocalDateTime.class))).thenReturn(predicate);
+        doReturn(path).when(transactionRoot).get(anyString());
 
+        TransactionFilter fullFilter = TransactionFilter.builder()
+                .name("INV-123")
+                .status(com.be_nuy_laundry.be_nuy_laundry.infrastructure.internal.database.entity.enumrated.TransactionStatus.DONE)
+                .startDate(java.time.LocalDateTime.now().minusDays(1))
+                .endDate(java.time.LocalDateTime.now())
+                .build();
+
+        Specification<TransactionEntity> spec = TransactionSpecification.getFilterSpecification(fullFilter);
         Predicate result = spec.toPredicate(transactionRoot, query, cb);
         assertThat(result).isEqualTo(predicate);
+
+        // Empty string name
+        TransactionFilter emptyNameFilter = TransactionFilter.builder().name("   ").build();
+        assertThat(TransactionSpecification.getFilterSpecification(emptyNameFilter).toPredicate(transactionRoot, query, cb)).isEqualTo(predicate);
+
+        // Null filter
+        Specification<TransactionEntity> nullSpec = TransactionSpecification.getFilterSpecification(null);
+        assertThat(nullSpec.toPredicate(transactionRoot, query, cb)).isEqualTo(predicate);
     }
 }
