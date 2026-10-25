@@ -46,4 +46,16 @@ public class CustomerRepositoryAdapter implements CustomerRepositoryPort {
     public void deleteById(String id) {
         customerJpaRepository.deleteById(id);
     }
+
+    @Override
+    public com.be_nuy_laundry.be_nuy_laundry.presentation.dtos.response.customer.CustomerMetricsDTO getMetrics() {
+        java.time.LocalDateTime startOfMonth = java.time.LocalDate.now().withDayOfMonth(1).atStartOfDay();
+        java.time.LocalDateTime nextMonth = startOfMonth.plusMonths(1);
+
+        return com.be_nuy_laundry.be_nuy_laundry.presentation.dtos.response.customer.CustomerMetricsDTO.builder()
+                .totalCustomers(customerJpaRepository.count())
+                .newCustomersThisMonth(customerJpaRepository.countCreatedBetween(startOfMonth, nextMonth))
+                .activeCustomers(customerJpaRepository.countActiveCustomers())
+                .build();
+    }
 }

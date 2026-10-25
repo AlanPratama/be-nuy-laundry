@@ -1,0 +1,23 @@
+databaseChangeLog:
+  - changeSet:
+      id: 016-add-outlet-extra-fields
+      author: alan
+      changes:
+        - addColumn:
+            tableName: settings
+            columns:
+              - column:
+                  name: logo_url
+                  type: TEXT
+              - column:
+                  name: latitude
+                  type: DOUBLE
+              - column:
+                  name: longitude
+                  type: DOUBLE
+              - column:
+                  name: google_maps_url
+                  type: TEXT
+              - column:
+                  name: instagram
+                  type: VARCHAR(255)

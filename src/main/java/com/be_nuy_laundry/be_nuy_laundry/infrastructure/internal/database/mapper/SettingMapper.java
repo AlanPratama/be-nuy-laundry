@@ -19,6 +19,11 @@ public class SettingMapper {
         entity.setFreeRadiusKm(model.getFreeRadiusKm());
         entity.setExtraCostPerKm(model.getExtraCostPerKm());
         entity.setReceiptFooterNote(model.getReceiptFooterNote());
+        entity.setLogoUrl(model.getLogoUrl());
+        entity.setLatitude(model.getLatitude());
+        entity.setLongitude(model.getLongitude());
+        entity.setGoogleMapsUrl(model.getGoogleMapsUrl());
+        entity.setInstagram(model.getInstagram());
         entity.setCreatedAt(model.getCreatedAt());
         entity.setUpdatedAt(model.getUpdatedAt());
 
@@ -38,6 +43,11 @@ public class SettingMapper {
         model.setFreeRadiusKm(entity.getFreeRadiusKm());
         model.setExtraCostPerKm(entity.getExtraCostPerKm());
         model.setReceiptFooterNote(entity.getReceiptFooterNote());
+        model.setLogoUrl(entity.getLogoUrl());
+        model.setLatitude(entity.getLatitude());
+        model.setLongitude(entity.getLongitude());
+        model.setGoogleMapsUrl(entity.getGoogleMapsUrl());
+        model.setInstagram(entity.getInstagram());
         model.setCreatedAt(entity.getCreatedAt());
         model.setUpdatedAt(entity.getUpdatedAt());
 
@@ -57,6 +67,11 @@ public class SettingMapper {
                 .freeRadiusKm(model.getFreeRadiusKm())
                 .extraCostPerKm(model.getExtraCostPerKm())
                 .receiptFooterNote(model.getReceiptFooterNote())
+                .logoUrl(model.getLogoUrl())
+                .latitude(model.getLatitude())
+                .longitude(model.getLongitude())
+                .googleMapsUrl(model.getGoogleMapsUrl())
+                .instagram(model.getInstagram())
                 .createdAt(model.getCreatedAt())
                 .updatedAt(model.getUpdatedAt())
                 .build();

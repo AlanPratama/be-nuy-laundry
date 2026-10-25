@@ -44,3 +44,12 @@ databaseChangeLog:
   - include:
       file: 015-create-settings.yaml
       relativeToChangelogFile: true
+  - include:
+      file: 016-add-outlet-extra-fields.yaml
+      relativeToChangelogFile: true
+  - include:
+      file: 017-add-down-payment-transactions.yaml
+      relativeToChangelogFile: true
+  - include:
+      file: 018-create-articles.yaml
+      relativeToChangelogFile: true

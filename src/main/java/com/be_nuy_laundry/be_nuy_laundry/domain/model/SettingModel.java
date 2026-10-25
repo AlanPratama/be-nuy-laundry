@@ -16,4 +16,9 @@ public class SettingModel extends BaseModel {
     private Integer freeRadiusKm;
     private Integer extraCostPerKm;
     private String receiptFooterNote;
+    private String logoUrl;
+    private Double latitude;
+    private Double longitude;
+    private String googleMapsUrl;
+    private String instagram;
 }

@@ -37,6 +37,8 @@ public class PackageRequestDTO {
     @Size(min = 1, message = "Minimal pilih 1 benefit untuk paket ini")
     List<String> benefitIds;
 
+    private Boolean removePhoto;
+
     @JsonIgnore
     MultipartFile file;
 

@@ -222,6 +222,11 @@ class MappersTest {
                 mockFile, TransactionFileType.CONDITION_BEFORE, "/path/test.jpg");
         assertThat(multipartModel).isNotNull();
         assertThat(multipartModel.getFileName()).isEqualTo("test.jpg");
+
+        fileModel.setTransaction(trxModel);
+        TransactionFileEntity fileWithTrxEntity = TransactionFileMapper.mapToEntity(fileModel);
+        assertThat(fileWithTrxEntity.getTransaction()).isNotNull();
+        assertThat(fileWithTrxEntity.getTransaction().getId()).isEqualTo(trxModel.getId());
     }
 
     @Test

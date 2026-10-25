@@ -1,6 +1,6 @@
 {
   "info": {
-    "_postman_id": "107c2f2c-afd6-4e6c-a598-7356d9a2ae73",
+    "_postman_id": "eac1e1e9-d0c1-43bf-b068-dc4124e06701",
     "name": "BE Nuy Laundry API Collection",
     "description": "Koleksi resmi REST API backend Nuy Laundry lengkap dengan otomatisasi token, alur transaksi, file multipart, RBAC authorization, dan monitoring.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
@@ -1759,6 +1759,65 @@
               }
             }
           ]
+        },
+        {
+          "name": "05. Update Transaction Status Only (PATCH Dedicated)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/transactions/{{transactionId}}/status",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "transactions",
+                "{{transactionId}}",
+                "status"
+              ]
+            },
+            "description": "Endpoint khusus untuk langsung memperbarui status transaksi tanpa roundtrip fetch rincian.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{staffToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"DONE\"\n}"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('Transaction status updated via dedicated endpoint', function () {",
+                  "    var res = pm.response.json();",
+                  "    pm.expect(res.data.status).to.eql('DONE');",
+                  "});"
+                ]
+              }
+            }
+          ]
         }
       ]
     },
@@ -1918,11 +1977,206 @@
               }
             }
           ]
+        },
+        {
+          "name": "04. View Uploaded File via Proxy",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/files/view?path=sample.jpg",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "files",
+                "view"
+              ],
+              "query": [
+                {
+                  "key": "path",
+                  "value": "sample.jpg"
+                }
+              ]
+            },
+            "description": "Mengunduh dan merender file gambar/dokumen dari MinIO storage via proxy backend."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200 or 404', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 404]);",
+                  "});"
+                ]
+              }
+            }
+          ]
         }
       ]
     },
     {
-      "name": "08. Health & Monitoring",
+      "name": "08. Dashboard & Metrics",
+      "item": [
+        {
+          "name": "01. Get Dashboard Metrics",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/dashboard/metrics",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "dashboard",
+                "metrics"
+              ]
+            },
+            "description": "Mengambil statistik pendapatan hari ini, berat cucian, antrian ekspres, dan status mesin.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{staffToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('Metrics object contains revenue and orders', function () {",
+                  "    var res = pm.response.json();",
+                  "    pm.expect(res.data.todayRevenue).to.not.be.undefined;",
+                  "    pm.expect(res.data.activeOrdersCount).to.be.a('number');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "09. Outlet Profile & Settings",
+      "item": [
+        {
+          "name": "01. Get Outlet Settings",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/outlet/profile",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "outlet",
+                "profile"
+              ]
+            },
+            "description": "Mengambil profil outlet laundry (alamat, jam operasional, radius antar)."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('Setting data matches payload', function () {",
+                  "    var res = pm.response.json();",
+                  "    pm.expect(res.data.outletName).to.eql('Nuy Laundry Central');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "02. Update Outlet Settings (Admin)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/outlet/profile",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "outlet",
+                "profile"
+              ]
+            },
+            "description": "Memperbarui profil dan konfigurasi outlet laundry.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"outletName\": \"Nuy Laundry Central\",\n  \"address\": \"Jl. Mawar No. 12, Jakarta\",\n  \"phone\": \"081234567890\",\n  \"openHour\": \"07:00\",\n  \"closeHour\": \"21:00\",\n  \"freeRadiusKm\": 3,\n  \"extraCostPerKm\": 2500,\n  \"receiptFooterNote\": \"Terima kasih telah mempercayakan cucian Anda kepada kami.\"\n}"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('Setting data matches payload', function () {",
+                  "    var res = pm.response.json();",
+                  "    pm.expect(res.data.outletName).to.eql('Nuy Laundry Central');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "10. Health & Monitoring",
       "item": [
         {
           "name": "01. Health Check Liveness",

@@ -51,4 +51,24 @@ public class UserRepositoryAdapter implements UserRepositoryPort {
     public void deleteById(String id) {
         userJpaRepository.deleteById(id);
     }
+
+    @Override
+    public com.be_nuy_laundry.be_nuy_laundry.presentation.dtos.response.UserMetricsDTO getMetrics() {
+        long total = userJpaRepository.count();
+        long active = userJpaRepository.countByIsActiveTrue();
+        long inactive = total - active;
+        long admin = userJpaRepository.countByRoleIn(java.util.List.of(
+                com.be_nuy_laundry.be_nuy_laundry.infrastructure.internal.database.entity.enumrated.UserRole.ADMIN,
+                com.be_nuy_laundry.be_nuy_laundry.infrastructure.internal.database.entity.enumrated.UserRole.SUPER_ADMIN
+        ));
+        long cashier = userJpaRepository.countByRole(com.be_nuy_laundry.be_nuy_laundry.infrastructure.internal.database.entity.enumrated.UserRole.STAFF);
+
+        return com.be_nuy_laundry.be_nuy_laundry.presentation.dtos.response.UserMetricsDTO.builder()
+                .totalStaff(total)
+                .activeStaff(active)
+                .inactiveStaff(inactive)
+                .adminCount(admin)
+                .cashierCount(cashier)
+                .build();
+    }
 }

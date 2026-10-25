@@ -17,4 +17,5 @@ public interface PackageUseCase {
     Page<PackageModel> getAllPackages(PackageFilter packageFilter, Pageable pageable);
     PackageModel updatePackage(String id, PackageRequestDTO request);
     void deletePackage(String id);
+    com.be_nuy_laundry.be_nuy_laundry.presentation.dtos.response.packages.PackageMetricsDTO getMetrics();
 }

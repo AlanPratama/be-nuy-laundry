@@ -47,6 +47,11 @@ public class PackageController {
         return ResponseUtil.success(SUCCESS_CREATE_DATA_MSG, packageUseCase.createPackage(request));
     }
 
+    @GetMapping("/metrics")
+    public ResponseEntity<ApiResponse<com.be_nuy_laundry.be_nuy_laundry.presentation.dtos.response.packages.PackageMetricsDTO>> getMetrics() {
+        return ResponseUtil.success(SUCCESS_RETRIEVE_DATA_MSG, packageUseCase.getMetrics());
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<PackageModel>> getById(@PathVariable String id) {
         return ResponseUtil.success(SUCCESS_RETRIEVE_DATA_MSG, packageUseCase.getPackageById(id));

@@ -1,7 +1,10 @@
 package com.be_nuy_laundry.be_nuy_laundry.application.services;
 
+import com.be_nuy_laundry.be_nuy_laundry.application.ports.in.FileUseCase;
 import com.be_nuy_laundry.be_nuy_laundry.application.ports.in.SettingUseCase;
 import com.be_nuy_laundry.be_nuy_laundry.application.ports.out.SettingRepositoryPort;
+import com.be_nuy_laundry.be_nuy_laundry.common.constant.MinIoConstant;
+import com.be_nuy_laundry.be_nuy_laundry.common.util.ValueUtil;
 import com.be_nuy_laundry.be_nuy_laundry.domain.model.SettingModel;
 import com.be_nuy_laundry.be_nuy_laundry.infrastructure.internal.database.mapper.SettingMapper;
 import com.be_nuy_laundry.be_nuy_laundry.presentation.dtos.request.setting.SettingRequestDTO;
@@ -15,6 +18,7 @@ import org.springframework.stereotype.Service;
 public class SettingServiceImpl implements SettingUseCase {
 
     private final SettingRepositoryPort settingRepositoryPort;
+    private final FileUseCase fileUseCase;
 
     @Override
     public SettingResponseDTO getSetting() {
@@ -39,6 +43,21 @@ public class SettingServiceImpl implements SettingUseCase {
         existing.setExtraCostPerKm(request.getExtraCostPerKm());
         existing.setReceiptFooterNote(request.getReceiptFooterNote());
 
+        if (ValueUtil.hasValueMultipartFile(request.getFile())) {
+            String uploadedPath = fileUseCase.upload(
+                    request.getFile(),
+                    "outlet-logo",
+                    MinIoConstant.FOLDER.OUTLET);
+            existing.setLogoUrl(uploadedPath);
+        } else if (request.getLogoUrl() != null) {
+            existing.setLogoUrl(request.getLogoUrl());
+        }
+
+        existing.setLatitude(request.getLatitude());
+        existing.setLongitude(request.getLongitude());
+        existing.setGoogleMapsUrl(request.getGoogleMapsUrl());
+        existing.setInstagram(request.getInstagram());
+
         SettingModel saved = settingRepositoryPort.save(existing);
         return SettingMapper.mapDomainToResponse(saved);
     }
@@ -53,6 +72,10 @@ public class SettingServiceImpl implements SettingUseCase {
                 .freeRadiusKm(5)
                 .extraCostPerKm(2000)
                 .receiptFooterNote("1 Mesin 1 Pelanggan • Pakaian Bersih, Wangi, & Rapi")
+                .latitude(-6.2088)
+                .longitude(106.8456)
+                .googleMapsUrl("https://maps.google.com")
+                .instagram("@nuylaundry")
                 .build();
 
         return settingRepositoryPort.save(defaultSetting);

@@ -70,6 +70,18 @@ class JwtAuthFilterTest {
         swaggerRequest.setServletPath("/swagger-ui/index.html");
         assertThat(jwtAuthFilter.shouldNotFilter(swaggerRequest)).isTrue();
 
+        MockHttpServletRequest optionsRequest = new MockHttpServletRequest();
+        optionsRequest.setMethod("OPTIONS");
+        assertThat(jwtAuthFilter.shouldNotFilter(optionsRequest)).isTrue();
+
+        MockHttpServletRequest healthRequest = new MockHttpServletRequest();
+        healthRequest.setServletPath("/actuator/health");
+        assertThat(jwtAuthFilter.shouldNotFilter(healthRequest)).isTrue();
+
+        MockHttpServletRequest healthSubRequest = new MockHttpServletRequest();
+        healthSubRequest.setServletPath("/actuator/health/readiness");
+        assertThat(jwtAuthFilter.shouldNotFilter(healthSubRequest)).isTrue();
+
         MockHttpServletRequest protectedRequest = new MockHttpServletRequest();
         protectedRequest.setServletPath("/api/transactions");
         assertThat(jwtAuthFilter.shouldNotFilter(protectedRequest)).isFalse();

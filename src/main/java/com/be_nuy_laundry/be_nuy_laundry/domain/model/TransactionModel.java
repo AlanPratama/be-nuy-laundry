@@ -25,6 +25,15 @@ public class TransactionModel extends BaseModel {
     private String customerAddress;
     private CustomerModel customer;
     private UserModel user;
+    private BigDecimal downPayment;
+    private com.be_nuy_laundry.be_nuy_laundry.infrastructure.internal.database.entity.enumrated.PaymentStatus paymentStatus;
     private List<TransactionDetailModel> transactionDetails = new ArrayList<>();
     private List<TransactionFileModel> transactionFiles;
+
+    public BigDecimal getRemainingBalance() {
+        BigDecimal total = totalPrice != null ? totalPrice : BigDecimal.ZERO;
+        BigDecimal paid = downPayment != null ? downPayment : BigDecimal.ZERO;
+        BigDecimal remaining = total.subtract(paid);
+        return remaining.compareTo(BigDecimal.ZERO) < 0 ? BigDecimal.ZERO : remaining;
+    }
 }

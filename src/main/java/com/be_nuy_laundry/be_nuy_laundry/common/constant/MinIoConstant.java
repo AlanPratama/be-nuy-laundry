@@ -6,5 +6,7 @@ public class MinIoConstant {
         public static String USER = "users";
         public static String PACKAGE = "packages";
         public static String TRANSACTION = "transactions";
+        public static String OUTLET = "outlet";
+        public static String ARTICLE = "articles";
     }
 }

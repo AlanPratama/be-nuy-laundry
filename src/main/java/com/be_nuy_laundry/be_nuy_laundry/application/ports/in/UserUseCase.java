@@ -19,4 +19,5 @@ public interface UserUseCase {
     UserResponseDTO updateUser(String id, UserUpdateRequestDTO requestDTO);
     void deleteUser(String id);
     UserResponseDTO resetPassword(String id, UserResetPasswordRequestDTO requestDTO);
+    com.be_nuy_laundry.be_nuy_laundry.presentation.dtos.response.UserMetricsDTO getMetrics();
 }

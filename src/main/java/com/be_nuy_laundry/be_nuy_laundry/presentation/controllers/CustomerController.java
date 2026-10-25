@@ -60,6 +60,11 @@ public class CustomerController {
         return ResponseUtil.successPage(SUCCESS_RETRIEVE_DATA_MSG, customerUseCase.getAllCustomers(customerFilter, pageable));
     }
 
+    @GetMapping("/metrics")
+    public ResponseEntity<ApiResponse<com.be_nuy_laundry.be_nuy_laundry.presentation.dtos.response.customer.CustomerMetricsDTO>> getMetrics() {
+        return ResponseUtil.success(SUCCESS_RETRIEVE_DATA_MSG, customerUseCase.getMetrics());
+    }
+
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<CustomerModel>> update(@PathVariable String id, @Valid @RequestBody CustomerRequestDTO request) {
         CustomerModel customerModel = request.toModel();

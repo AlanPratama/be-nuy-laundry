@@ -102,6 +102,14 @@ Berdasarkan konfigurasi aktual pada `SecurityConfig.java` dan anotasi method sec
 | **Settings** | `PUT` | `/api/v1/outlet/profile` | `ADMIN`, `SUPER_ADMIN` | Perbarui informasi profil outlet & operasional |
 | **Settings** | `GET` | `/api/v1/settings` | `ADMIN`, `SUPER_ADMIN` | Ambil pengaturan key-value sistem |
 | **Settings** | `POST` | `/api/v1/settings` | `ADMIN`, `SUPER_ADMIN` | Simpan / perbarui pengaturan key-value |
+| **Articles** | `GET` | `/api/v1/articles` | Authenticated | Ambil daftar artikel berhalaman & filter (`search`, `category`, `isPublished`) |
+| **Articles** | `GET` | `/api/v1/articles/{idOrSlug}` | Authenticated | Ambil detail artikel berdasarkan ID atau slug |
+| **Articles** | `POST` | `/api/v1/articles` | `ADMIN`, `SUPER_ADMIN` | Buat artikel baru (Multipart: `request` JSON + `file` cover) |
+| **Articles** | `PUT` | `/api/v1/articles/{id}` | `ADMIN`, `SUPER_ADMIN` | Perbarui artikel (Multipart: `request` JSON + `file` cover) |
+| **Articles** | `DELETE` | `/api/v1/articles/{id}` | `ADMIN`, `SUPER_ADMIN` | Hapus artikel secara permanen beserta foto MinIO |
+| **Articles** | `PATCH` | `/api/v1/articles/{id}/publish` | `ADMIN`, `SUPER_ADMIN` | Toggle status publikasi artikel (_Online_ / _Draft_) |
+| **Articles** | `POST` | `/api/v1/articles/upload-image` | `ADMIN`, `SUPER_ADMIN` | Unggah gambar inline konten artikel ke MinIO |
+| **Files** | `GET` | `/api/v1/files/**` | Authenticated | Streaming dan unduh berkas biner/gambar langsung dari MinIO Storage |
 | **Users** | `POST` | `/api/v1/users` | `ADMIN`, `SUPER_ADMIN` | Registrasi user / staf baru (Multipart: request + file) |
 | **Users** | `GET` | `/api/v1/users/{id}` | `ADMIN`, `SUPER_ADMIN` | Ambil data user berdasarkan ID |
 | **Users** | `GET` | `/api/v1/users` | `ADMIN`, `SUPER_ADMIN` | Ambil daftar user berhalaman (filter: `name`, `role`, `username`, `phone`) |

@@ -24,6 +24,9 @@ public class TransactionResponseDTO extends BaseModel {
     private LocalDateTime targetDate;
     private LocalDateTime deliveredDate;
     private TransactionStatus status;
+    private BigDecimal downPayment;
+    private BigDecimal remainingBalance;
+    private com.be_nuy_laundry.be_nuy_laundry.infrastructure.internal.database.entity.enumrated.PaymentStatus paymentStatus;
     private String customerName;
     private String customerPhone;
     private String customerAddress;

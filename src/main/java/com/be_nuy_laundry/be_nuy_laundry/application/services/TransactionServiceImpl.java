@@ -12,6 +12,7 @@ import com.be_nuy_laundry.be_nuy_laundry.infrastructure.internal.database.mapper
 import com.be_nuy_laundry.be_nuy_laundry.presentation.dtos.request.transaction.detail.TransactionDetailRequestDTO;
 import com.be_nuy_laundry.be_nuy_laundry.presentation.dtos.request.transaction.file.TransactionFileDeleteRequestDTO;
 import com.be_nuy_laundry.be_nuy_laundry.presentation.dtos.request.transaction.header.TransactionRequestDTO;
+import com.be_nuy_laundry.be_nuy_laundry.presentation.dtos.request.transaction.header.TransactionStatusUpdateRequestDTO;
 import com.be_nuy_laundry.be_nuy_laundry.presentation.dtos.response.transaction.header.TransactionResponseDTO;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -56,6 +57,7 @@ public class TransactionServiceImpl implements TransactionUseCase {
             BigDecimal totalPackagePrice = new BigDecimal(quantity * packageModel.getPrice().intValue());
 
             TransactionDetailModel transactionDetailModel = new TransactionDetailModel();
+            transactionDetailModel.setPackageId(packageModel.getId());
             transactionDetailModel.setPkg(packageModel);
             transactionDetailModel.setPackageName(packageModel.getName());
             transactionDetailModel.setPackageDescription(packageModel.getDescription());
@@ -85,9 +87,26 @@ public class TransactionServiceImpl implements TransactionUseCase {
                 invoiceDocumentFile, conditionBeforeFiles,
                 conditionAfterFiles, otherFiles);
 
+        BigDecimal downPayment = transactionRequest.getDownPayment() != null ? transactionRequest.getDownPayment() : BigDecimal.ZERO;
+        com.be_nuy_laundry.be_nuy_laundry.infrastructure.internal.database.entity.enumrated.PaymentStatus paymentStatus = transactionRequest.getPaymentStatus();
+        if (paymentStatus == null) {
+            if (downPayment.compareTo(BigDecimal.ZERO) <= 0) {
+                paymentStatus = com.be_nuy_laundry.be_nuy_laundry.infrastructure.internal.database.entity.enumrated.PaymentStatus.UNPAID;
+                downPayment = BigDecimal.ZERO;
+            } else if (downPayment.compareTo(totalAllPackagesPrice) >= 0) {
+                paymentStatus = com.be_nuy_laundry.be_nuy_laundry.infrastructure.internal.database.entity.enumrated.PaymentStatus.PAID;
+            } else {
+                paymentStatus = com.be_nuy_laundry.be_nuy_laundry.infrastructure.internal.database.entity.enumrated.PaymentStatus.DOWN_PAYMENT;
+            }
+        } else if (paymentStatus == com.be_nuy_laundry.be_nuy_laundry.infrastructure.internal.database.entity.enumrated.PaymentStatus.PAID && downPayment.compareTo(totalAllPackagesPrice) < 0) {
+            downPayment = totalAllPackagesPrice;
+        }
+
         TransactionModel transactionModel = new TransactionModel();
         transactionModel.setOrderDate(transactionRequest.getOrderDate());
         transactionModel.setStatus(TransactionStatus.IN_PROGRESS);
+        transactionModel.setDownPayment(downPayment);
+        transactionModel.setPaymentStatus(paymentStatus);
         transactionModel.setTargetDate(ValueUtil.orElseLocalDateTime(transactionRequest.getTargetDate(), maxEstimationDate));
         transactionModel.setCustomerName(customerModel.getName());
         transactionModel.setCustomerPhone(customerModel.getPhone());
@@ -182,11 +201,14 @@ public class TransactionServiceImpl implements TransactionUseCase {
             BigDecimal totalPackagePrice = unitPrice.multiply(BigDecimal.valueOf(quantity));
 
             if (packageModel != null) {
+                transactionDetailModel.setPackageId(packageModel.getId());
                 transactionDetailModel.setPkg(packageModel);
                 transactionDetailModel.setPackageName(packageModel.getName());
                 transactionDetailModel.setPackageDescription(packageModel.getDescription());
                 transactionDetailModel.setPackageType(packageModel.getType());
                 transactionDetailModel.setPackageDaysEstimation(packageModel.getDaysEstimation());
+            } else if (detailRequest.getPackageId() != null) {
+                transactionDetailModel.setPackageId(detailRequest.getPackageId());
             }
 
             transactionDetailModel.setQuantity(quantity);
@@ -200,11 +222,74 @@ public class TransactionServiceImpl implements TransactionUseCase {
                 maxEstimationDate = transactionDetailModel.getTargetDate();
         }
 
+        if (transactionRequest.getDownPayment() != null) {
+            BigDecimal downPayment = transactionRequest.getDownPayment();
+            com.be_nuy_laundry.be_nuy_laundry.infrastructure.internal.database.entity.enumrated.PaymentStatus paymentStatus = transactionRequest.getPaymentStatus();
+            if (paymentStatus == null) {
+                if (downPayment.compareTo(BigDecimal.ZERO) <= 0) {
+                    paymentStatus = com.be_nuy_laundry.be_nuy_laundry.infrastructure.internal.database.entity.enumrated.PaymentStatus.UNPAID;
+                    downPayment = BigDecimal.ZERO;
+                } else if (downPayment.compareTo(totalAllPackagesPrice) >= 0) {
+                    paymentStatus = com.be_nuy_laundry.be_nuy_laundry.infrastructure.internal.database.entity.enumrated.PaymentStatus.PAID;
+                } else {
+                    paymentStatus = com.be_nuy_laundry.be_nuy_laundry.infrastructure.internal.database.entity.enumrated.PaymentStatus.DOWN_PAYMENT;
+                }
+            } else if (paymentStatus == com.be_nuy_laundry.be_nuy_laundry.infrastructure.internal.database.entity.enumrated.PaymentStatus.PAID && downPayment.compareTo(totalAllPackagesPrice) < 0) {
+                downPayment = totalAllPackagesPrice;
+            }
+            existingTransactionModel.setDownPayment(downPayment);
+            existingTransactionModel.setPaymentStatus(paymentStatus);
+        } else if (transactionRequest.getPaymentStatus() != null) {
+            com.be_nuy_laundry.be_nuy_laundry.infrastructure.internal.database.entity.enumrated.PaymentStatus paymentStatus = transactionRequest.getPaymentStatus();
+            existingTransactionModel.setPaymentStatus(paymentStatus);
+            if (paymentStatus == com.be_nuy_laundry.be_nuy_laundry.infrastructure.internal.database.entity.enumrated.PaymentStatus.PAID) {
+                existingTransactionModel.setDownPayment(totalAllPackagesPrice);
+            }
+        }
+
         existingTransactionModel.setOrderDate(ValueUtil.orElseLocalDateTime(transactionRequest.getOrderDate(), existingTransactionModel.getOrderDate()));
         existingTransactionModel.setTargetDate(maxEstimationDate);
         existingTransactionModel.setStatus(transactionRequest.getStatus());
         existingTransactionModel.setTotalPrice(totalAllPackagesPrice);
         existingTransactionModel.setTransactionDetails(transactionDetailModels);
+
+        return TransactionMapper.mapDomainToResponse(
+                transactionRepositoryPort.save(existingTransactionModel));
+    }
+
+    @Override
+    @Transactional
+    public TransactionResponseDTO updateTransactionPayment(String id, com.be_nuy_laundry.be_nuy_laundry.presentation.dtos.request.transaction.header.TransactionPaymentUpdateRequestDTO request) {
+        TransactionModel existingTransactionModel = transactionRepositoryPort.findById(id)
+                .orElseThrow(() -> new DataNotFoundException("Transaksi tidak ditemukan"));
+
+        BigDecimal total = existingTransactionModel.getTotalPrice() != null ? existingTransactionModel.getTotalPrice() : BigDecimal.ZERO;
+        BigDecimal paid = request.getDownPayment();
+        com.be_nuy_laundry.be_nuy_laundry.infrastructure.internal.database.entity.enumrated.PaymentStatus status = request.getPaymentStatus();
+
+        if (status == com.be_nuy_laundry.be_nuy_laundry.infrastructure.internal.database.entity.enumrated.PaymentStatus.PAID) {
+            paid = total;
+        } else if (paid != null) {
+            if (paid.compareTo(BigDecimal.ZERO) <= 0) {
+                status = com.be_nuy_laundry.be_nuy_laundry.infrastructure.internal.database.entity.enumrated.PaymentStatus.UNPAID;
+                paid = BigDecimal.ZERO;
+            } else if (paid.compareTo(total) >= 0) {
+                status = com.be_nuy_laundry.be_nuy_laundry.infrastructure.internal.database.entity.enumrated.PaymentStatus.PAID;
+            } else {
+                status = com.be_nuy_laundry.be_nuy_laundry.infrastructure.internal.database.entity.enumrated.PaymentStatus.DOWN_PAYMENT;
+            }
+        } else if (status != null) {
+            if (status == com.be_nuy_laundry.be_nuy_laundry.infrastructure.internal.database.entity.enumrated.PaymentStatus.UNPAID) {
+                paid = BigDecimal.ZERO;
+            }
+        }
+
+        if (paid != null) {
+            existingTransactionModel.setDownPayment(paid);
+        }
+        if (status != null) {
+            existingTransactionModel.setPaymentStatus(status);
+        }
 
         return TransactionMapper.mapDomainToResponse(
                 transactionRepositoryPort.save(existingTransactionModel));
@@ -224,5 +309,20 @@ public class TransactionServiceImpl implements TransactionUseCase {
         transactionRepositoryPort.deleteById(id);
     }
 
+    @Override
+    @Transactional
+    public TransactionResponseDTO updateTransactionStatus(String id, TransactionStatusUpdateRequestDTO request) {
+        TransactionModel existingTransactionModel = transactionRepositoryPort.findById(id)
+                .orElseThrow(() -> new DataNotFoundException("Transaksi tidak ditemukan"));
+
+        existingTransactionModel.setStatus(request.getStatus());
+        return TransactionMapper.mapDomainToResponse(
+                transactionRepositoryPort.save(existingTransactionModel));
+    }
+
+    @Override
+    public com.be_nuy_laundry.be_nuy_laundry.presentation.dtos.response.transaction.header.TransactionMetricsDTO getMetrics() {
+        return transactionRepositoryPort.getMetrics();
+    }
 
 }

@@ -126,6 +126,41 @@ class TransactionFileServiceImplTest {
     }
 
     @Test
+    @DisplayName("givenSaveAllFails_whenUploadTransactionFile_thenRollbackUploadedFilesAndRethrow")
+    void givenSaveAllFails_whenUploadTransactionFile_thenRollbackUploadedFilesAndRethrow() {
+        TransactionFileUploadRequestDTO request = new TransactionFileUploadRequestDTO();
+        request.setTransactionId("trx-123");
+        request.setPaymentReceiptFile(new MockMultipartFile("pay", "pay.jpg", "image/jpeg", "content".getBytes()));
+
+        when(transactionRepositoryPort.getInvoiceNo("trx-123")).thenReturn("TRX-123");
+        when(fileUseCase.upload(any(), anyString(), anyString())).thenReturn("/path/pay.jpg");
+        when(transactionFileRepositoryPort.saveAll(any())).thenThrow(new RuntimeException("DB error"));
+
+        assertThatThrownBy(() -> transactionFileService.uploadTransactionFile(request))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessage("DB error");
+
+        verify(fileUseCase).deleteObjects(List.of("/path/pay.jpg"));
+    }
+
+    @Test
+    @DisplayName("givenSaveAllFailsAndMinioFails_whenUploadTransactionFile_thenIgnoreMinioErrorAndRethrowDbError")
+    void givenSaveAllFailsAndMinioFails_whenUploadTransactionFile_thenIgnoreMinioErrorAndRethrowDbError() {
+        TransactionFileUploadRequestDTO request = new TransactionFileUploadRequestDTO();
+        request.setTransactionId("trx-123");
+        request.setPaymentReceiptFile(new MockMultipartFile("pay", "pay.jpg", "image/jpeg", "content".getBytes()));
+
+        when(transactionRepositoryPort.getInvoiceNo("trx-123")).thenReturn("TRX-123");
+        when(fileUseCase.upload(any(), anyString(), anyString())).thenReturn("/path/pay.jpg");
+        when(transactionFileRepositoryPort.saveAll(any())).thenThrow(new RuntimeException("DB error"));
+        doThrow(new RuntimeException("MinIO error")).when(fileUseCase).deleteObjects(any());
+
+        assertThatThrownBy(() -> transactionFileService.uploadTransactionFile(request))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessage("DB error");
+    }
+
+    @Test
     @DisplayName("givenDeleteListTransactionFileWithPartialFailures_thenReturnResponsesAndPruneDatabase")
     void givenDeleteListTransactionFileWithPartialFailures_thenReturnResponsesAndPruneDatabase() {
         TransactionFileModel file1 = TestDataBuilder.createSampleTransactionFile();
@@ -181,6 +216,11 @@ class TransactionFileServiceImplTest {
         assertThat(responses).hasSize(1);
         assertThat(responses.get(0).getMessage()).isEqualTo("MinIO error");
         verify(transactionFileRepositoryPort, never()).deleteByIds(any());
+
+        // Also test all files succeeding in deleteListFile
+        when(fileUseCase.deleteObjects(List.of("transactions/f1.jpg"))).thenReturn(java.util.Collections.emptyList());
+        List<TransactionFileDeleteResponseDTO> successResponses = transactionFileService.deleteListFile(request);
+        assertThat(successResponses).isEmpty();
     }
 
     @Test
@@ -216,5 +256,37 @@ class TransactionFileServiceImplTest {
                 List.of(other));
 
         assertThat(result).hasSize(5);
+    }
+
+    @Test
+    @DisplayName("givenNoFiles_whenSetTransactionFiles_thenReturnEmptyList")
+    void givenNoFiles_whenSetTransactionFiles_thenReturnEmptyList() {
+        List<TransactionFileModel> result = transactionFileService.setTransactionFiles(
+                "TRX-001", null, null, null, null, null);
+        assertThat(result).isEmpty();
+
+        List<TransactionFileModel> resultEmptyLists = transactionFileService.setTransactionFiles(
+                "TRX-001", null, null, java.util.Collections.emptyList(), java.util.Collections.emptyList(), java.util.Collections.emptyList());
+        assertThat(resultEmptyLists).isEmpty();
+    }
+
+    @Test
+    @DisplayName("givenEmptyMultipartFilesInList_whenSetTransactionFiles_thenSkipEmptyFiles")
+    void givenEmptyMultipartFilesInList_whenSetTransactionFiles_thenSkipEmptyFiles() {
+        MockMultipartFile emptyFile = new MockMultipartFile("empty", "", "image/jpeg", new byte[0]);
+
+        java.util.List<org.springframework.web.multipart.MultipartFile> filesWithEmpty = new java.util.ArrayList<>();
+        filesWithEmpty.add(emptyFile);
+        filesWithEmpty.add(null);
+
+        List<TransactionFileModel> result = transactionFileService.setTransactionFiles(
+                "TRX-001",
+                emptyFile,
+                emptyFile,
+                filesWithEmpty,
+                filesWithEmpty,
+                filesWithEmpty);
+
+        assertThat(result).isEmpty();
     }
 }

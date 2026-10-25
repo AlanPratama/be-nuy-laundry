@@ -224,6 +224,7 @@ class UserServiceImplTest {
         request.setPhone("089999999");
         request.setAddress("Updated Address");
         request.setRole(UserRole.ADMIN);
+        request.setIsActive(true);
         request.setFile(new MockMultipartFile("file", "new-avatar.png", "image/png", "newContent".getBytes()));
 
         when(userRepositoryPort.findById(existingUser.getId())).thenReturn(Optional.of(existingUser));

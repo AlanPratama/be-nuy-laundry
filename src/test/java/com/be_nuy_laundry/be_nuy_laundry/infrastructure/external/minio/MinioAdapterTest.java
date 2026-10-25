@@ -56,6 +56,17 @@ class MinioAdapterTest {
     }
 
     @Test
+    @DisplayName("givenPolicyException_whenInit_thenCatchGracefully")
+    void givenPolicyException_whenInit_thenCatchGracefully() throws Exception {
+        when(minioClient.bucketExists(any(BucketExistsArgs.class))).thenReturn(true);
+        doThrow(new RuntimeException("Policy failure")).when(minioClient).setBucketPolicy(any(SetBucketPolicyArgs.class));
+
+        minioAdapter.init();
+
+        verify(minioClient).setBucketPolicy(any(SetBucketPolicyArgs.class));
+    }
+
+    @Test
     @DisplayName("givenExceptionInInit_whenInit_thenThrowRuntimeException")
     void givenExceptionInInit_whenInit_thenThrowRuntimeException() throws Exception {
         when(minioClient.bucketExists(any(BucketExistsArgs.class))).thenThrow(new RuntimeException("Connection failed"));

@@ -116,6 +116,17 @@ class AdaptersTest {
 
         userRepositoryAdapter.deleteById(user.getId());
         verify(userJpaRepository).deleteById(user.getId());
+
+        when(userJpaRepository.count()).thenReturn(5L);
+        when(userJpaRepository.countByIsActiveTrue()).thenReturn(4L);
+        when(userJpaRepository.countByRoleIn(any())).thenReturn(2L);
+        when(userJpaRepository.countByRole(any())).thenReturn(3L);
+        var metrics = userRepositoryAdapter.getMetrics();
+        assertThat(metrics.getTotalStaff()).isEqualTo(5L);
+        assertThat(metrics.getActiveStaff()).isEqualTo(4L);
+        assertThat(metrics.getInactiveStaff()).isEqualTo(1L);
+        assertThat(metrics.getAdminCount()).isEqualTo(2L);
+        assertThat(metrics.getCashierCount()).isEqualTo(3L);
     }
 
     @Test
@@ -196,6 +207,13 @@ class AdaptersTest {
 
         transactionRepositoryAdapter.deleteById(trx.getId());
         verify(transactionJpaRepository).deleteById(trx.getId());
+
+        when(transactionJpaRepository.count()).thenReturn(5L);
+        when(transactionJpaRepository.countByStatus(any())).thenReturn(2L);
+        when(transactionJpaRepository.sumAllTotalPrice()).thenReturn(java.math.BigDecimal.valueOf(100000));
+        var metrics = transactionRepositoryAdapter.getMetrics();
+        assertThat(metrics.getTotalTransactions()).isEqualTo(5L);
+        assertThat(metrics.getTotalRevenue()).isEqualTo(java.math.BigDecimal.valueOf(100000));
     }
 
     @Test

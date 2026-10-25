@@ -92,7 +92,7 @@ class TransactionControllerTest {
         when(transactionUseCase.getAllTransactions(any(TransactionFilter.class), any(Pageable.class))).thenReturn(page);
 
         ResponseEntity<ApiResponse<PageResponse<TransactionResponseDTO>>> response =
-                transactionController.getAll(0, 10, "createdAt", "desc", "Alice");
+                transactionController.getAll(0, 10, "createdAt", "desc", "Alice", com.be_nuy_laundry.be_nuy_laundry.infrastructure.internal.database.entity.enumrated.TransactionStatus.IN_PROGRESS, null, null, null, null, null, null, null);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).isNotNull();
@@ -101,6 +101,29 @@ class TransactionControllerTest {
         ArgumentCaptor<TransactionFilter> filterCaptor = ArgumentCaptor.forClass(TransactionFilter.class);
         verify(transactionUseCase).getAllTransactions(filterCaptor.capture(), any(Pageable.class));
         assertThat(filterCaptor.getValue().getName()).isEqualTo("Alice");
+        assertThat(filterCaptor.getValue().getStatus()).isEqualTo(com.be_nuy_laundry.be_nuy_laundry.infrastructure.internal.database.entity.enumrated.TransactionStatus.IN_PROGRESS);
+    }
+
+    @Test
+    @DisplayName("givenPaymentRequest_whenUpdatePayment_thenReturnUpdatedResponse")
+    void givenPaymentRequest_whenUpdatePayment_thenReturnUpdatedResponse() {
+        com.be_nuy_laundry.be_nuy_laundry.presentation.dtos.request.transaction.header.TransactionPaymentUpdateRequestDTO request =
+                com.be_nuy_laundry.be_nuy_laundry.presentation.dtos.request.transaction.header.TransactionPaymentUpdateRequestDTO.builder()
+                        .downPayment(java.math.BigDecimal.valueOf(50000))
+                        .paymentStatus(com.be_nuy_laundry.be_nuy_laundry.infrastructure.internal.database.entity.enumrated.PaymentStatus.PAID)
+                        .build();
+
+        TransactionResponseDTO responseDTO = new TransactionResponseDTO();
+        responseDTO.setId("trx-1");
+
+        when(transactionUseCase.updateTransactionPayment(eq("trx-1"), eq(request))).thenReturn(responseDTO);
+
+        ResponseEntity<ApiResponse<TransactionResponseDTO>> patchResp = transactionController.updatePayment("trx-1", request);
+        ResponseEntity<ApiResponse<TransactionResponseDTO>> putResp = transactionController.updatePaymentPut("trx-1", request);
+
+        assertThat(patchResp.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(putResp.getStatusCode()).isEqualTo(HttpStatus.OK);
+        verify(transactionUseCase, times(2)).updateTransactionPayment("trx-1", request);
     }
 
     @Test
@@ -120,6 +143,25 @@ class TransactionControllerTest {
         assertThat(response.getBody()).isNotNull();
         assertThat(response.getBody().getData()).isEqualTo(responseDTO);
         verify(transactionUseCase).updateTransaction("trx-1", request);
+    }
+
+    @Test
+    @DisplayName("givenStatusRequest_whenUpdateStatus_thenReturnUpdatedResponse")
+    void givenStatusRequest_whenUpdateStatus_thenReturnUpdatedResponse() {
+        com.be_nuy_laundry.be_nuy_laundry.presentation.dtos.request.transaction.header.TransactionStatusUpdateRequestDTO request =
+                new com.be_nuy_laundry.be_nuy_laundry.presentation.dtos.request.transaction.header.TransactionStatusUpdateRequestDTO(com.be_nuy_laundry.be_nuy_laundry.infrastructure.internal.database.entity.enumrated.TransactionStatus.DONE);
+
+        TransactionResponseDTO responseDTO = new TransactionResponseDTO();
+        responseDTO.setId("trx-1");
+
+        when(transactionUseCase.updateTransactionStatus(eq("trx-1"), eq(request))).thenReturn(responseDTO);
+
+        ResponseEntity<ApiResponse<TransactionResponseDTO>> patchResp = transactionController.updateStatus("trx-1", request);
+        ResponseEntity<ApiResponse<TransactionResponseDTO>> putResp = transactionController.updateStatusPut("trx-1", request);
+
+        assertThat(patchResp.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(putResp.getStatusCode()).isEqualTo(HttpStatus.OK);
+        verify(transactionUseCase, times(2)).updateTransactionStatus("trx-1", request);
     }
 
     @Test

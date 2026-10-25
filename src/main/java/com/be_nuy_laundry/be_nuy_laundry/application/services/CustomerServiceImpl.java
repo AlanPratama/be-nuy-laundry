@@ -51,4 +51,9 @@ public class CustomerServiceImpl implements CustomerUseCase {
         this.getCustomerById(id);
         customerRepositoryAdapter.deleteById(id);
     }
+
+    @Override
+    public com.be_nuy_laundry.be_nuy_laundry.presentation.dtos.response.customer.CustomerMetricsDTO getMetrics() {
+        return customerRepositoryAdapter.getMetrics();
+    }
 }

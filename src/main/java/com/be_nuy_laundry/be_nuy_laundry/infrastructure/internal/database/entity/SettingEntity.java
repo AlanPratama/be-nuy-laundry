@@ -36,4 +36,18 @@ public class SettingEntity extends BaseEntity {
     @Column(name = "receipt_footer_note", columnDefinition = "TEXT")
     private String receiptFooterNote;
 
+    @Column(name = "logo_url", columnDefinition = "TEXT")
+    private String logoUrl;
+
+    @Column(name = "latitude")
+    private Double latitude;
+
+    @Column(name = "longitude")
+    private Double longitude;
+
+    @Column(name = "google_maps_url", columnDefinition = "TEXT")
+    private String googleMapsUrl;
+
+    @Column(name = "instagram", length = 255)
+    private String instagram;
 }

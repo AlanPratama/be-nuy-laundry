@@ -5,8 +5,10 @@ import com.be_nuy_laundry.be_nuy_laundry.domain.model.TransactionModel;
 import com.be_nuy_laundry.be_nuy_laundry.infrastructure.internal.database.entity.TransactionDetailEntity;
 import com.be_nuy_laundry.be_nuy_laundry.infrastructure.internal.database.entity.TransactionEntity;
 import com.be_nuy_laundry.be_nuy_laundry.infrastructure.internal.database.entity.TransactionFileEntity;
+import com.be_nuy_laundry.be_nuy_laundry.infrastructure.internal.database.entity.enumrated.PaymentStatus;
 import com.be_nuy_laundry.be_nuy_laundry.presentation.dtos.response.transaction.header.TransactionResponseDTO;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -23,6 +25,8 @@ public class TransactionMapper {
         entity.setOrderDate(model.getOrderDate());
         entity.setTargetDate(model.getTargetDate());
         entity.setStatus(model.getStatus());
+        entity.setDownPayment(model.getDownPayment() != null ? model.getDownPayment() : BigDecimal.ZERO);
+        entity.setPaymentStatus(model.getPaymentStatus() != null ? model.getPaymentStatus() : PaymentStatus.UNPAID);
         entity.setCustomerName(model.getCustomerName());
         entity.setCustomerPhone(model.getCustomerPhone());
         entity.setCustomerAddress(model.getCustomerAddress());
@@ -65,6 +69,8 @@ public class TransactionMapper {
         model.setOrderDate(entity.getOrderDate());
         model.setTargetDate(entity.getTargetDate());
         model.setStatus(entity.getStatus());
+        model.setDownPayment(entity.getDownPayment() != null ? entity.getDownPayment() : BigDecimal.ZERO);
+        model.setPaymentStatus(entity.getPaymentStatus() != null ? entity.getPaymentStatus() : PaymentStatus.UNPAID);
         model.setCustomerName(entity.getCustomerName());
         model.setCustomerPhone(entity.getCustomerPhone());
         model.setCustomerAddress(entity.getCustomerAddress());
@@ -90,6 +96,10 @@ public class TransactionMapper {
         if (entities == null)
             return new ArrayList<>();
 
+        return modelsStream(entities);
+    }
+
+    private static List<TransactionModel> modelsStream(List<TransactionEntity> entities) {
         return entities.stream()
                 .map(TransactionMapper::mapToDomain)
                 .toList();
@@ -107,6 +117,27 @@ public class TransactionMapper {
         transactionResponseDTO.setTargetDate(model.getTargetDate());
         transactionResponseDTO.setDeliveredDate(model.getDeliveredDate());
         transactionResponseDTO.setStatus(model.getStatus());
+
+        BigDecimal total = model.getTotalPrice() != null ? model.getTotalPrice() : BigDecimal.ZERO;
+        BigDecimal paid = model.getDownPayment() != null ? model.getDownPayment() : BigDecimal.ZERO;
+        BigDecimal remaining = total.subtract(paid);
+        if (remaining.compareTo(BigDecimal.ZERO) < 0) remaining = BigDecimal.ZERO;
+
+        PaymentStatus payStatus = model.getPaymentStatus();
+        if (payStatus == null) {
+            if (paid.compareTo(BigDecimal.ZERO) <= 0) {
+                payStatus = PaymentStatus.UNPAID;
+            } else if (paid.compareTo(total) >= 0) {
+                payStatus = PaymentStatus.PAID;
+            } else {
+                payStatus = PaymentStatus.DOWN_PAYMENT;
+            }
+        }
+
+        transactionResponseDTO.setDownPayment(paid);
+        transactionResponseDTO.setRemainingBalance(remaining);
+        transactionResponseDTO.setPaymentStatus(payStatus);
+
         transactionResponseDTO.setCustomerName(model.getCustomerName());
         transactionResponseDTO.setCustomerPhone(model.getCustomerPhone());
         transactionResponseDTO.setCustomerAddress(model.getCustomerAddress());

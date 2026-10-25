@@ -32,7 +32,7 @@ public class PackageEntity extends BaseEntity {
 
     private String photo;
 
-    @OneToMany(mappedBy = "pkg", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "pkg", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<PackageBenefitEntity> benefits = new ArrayList<>();
 
     @OneToMany(mappedBy = "pkg", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
