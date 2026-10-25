@@ -77,10 +77,18 @@ public class PackageServiceImpl implements PackageUseCase{
 
     @Override
     public Map<String, PackageModel> getPackageByIds(List<String> ids) {
+        if (ids == null || ids.isEmpty())
+            return new HashMap<>();
 
-        List<String> distinctIds = ids.stream().distinct().toList();
+        List<String> distinctIds = ids.stream()
+                .filter(ValueUtil::hasValueString)
+                .distinct()
+                .toList();
+
+        if (distinctIds.isEmpty())
+            return new HashMap<>();
+
         List<PackageModel> packageModels = repositoryPort.findByIds(distinctIds);
-
         if (distinctIds.size() != packageModels.size())
             throw new DataNotFoundException("Beberapa paket tidak ditemukan");
 

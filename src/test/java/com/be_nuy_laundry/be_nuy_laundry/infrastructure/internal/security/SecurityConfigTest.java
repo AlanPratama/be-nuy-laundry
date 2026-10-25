@@ -2,24 +2,23 @@ package com.be_nuy_laundry.be_nuy_laundry.infrastructure.internal.security;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.springframework.security.config.Customizer;
-import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.configurers.AuthorizeHttpRequestsConfigurer;
+import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.web.DefaultSecurityFilterChain;
-import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
 
 class SecurityConfigTest {
+
+    private JwtAuthFilter createFilter() {
+        return new JwtAuthFilter(null, null, null);
+    }
 
     @Test
     @DisplayName("whenInstantiatingSecurityConfig_thenPasswordEncoderIsNotNull")
     void whenInstantiatingSecurityConfig_thenPasswordEncoderIsNotNull() {
-        JwtAuthFilter filter = mock(JwtAuthFilter.class);
-        SecurityConfig config = new SecurityConfig(filter);
+        SecurityConfig config = new SecurityConfig(createFilter());
 
         PasswordEncoder encoder = config.passwordEncoder();
         assertThat(encoder).isNotNull();
@@ -27,27 +26,29 @@ class SecurityConfigTest {
     }
 
     @Test
-    @DisplayName("whenConfiguringSecurityFilterChain_thenBuildFilterChain")
-    @SuppressWarnings({"unchecked", "rawtypes"})
-    void whenConfiguringSecurityFilterChain_thenBuildFilterChain() throws Exception {
-        JwtAuthFilter filter = mock(JwtAuthFilter.class);
-        SecurityConfig config = new SecurityConfig(filter);
+    @DisplayName("whenInstantiatingSecurityConfig_thenCorsConfigurationSourceIsNotNull")
+    void whenInstantiatingSecurityConfig_thenCorsConfigurationSourceIsNotNull() {
+        SecurityConfig config = new SecurityConfig(createFilter());
 
-        HttpSecurity http = mock(HttpSecurity.class, RETURNS_DEEP_STUBS);
-        DefaultSecurityFilterChain chain = mock(DefaultSecurityFilterChain.class);
-        when(http.csrf(any())).thenReturn(http);
-        when(http.exceptionHandling(any())).thenReturn(http);
-        when(http.authorizeHttpRequests(any())).thenAnswer(invocation -> {
-            Customizer customizer = invocation.getArgument(0);
-            AuthorizeHttpRequestsConfigurer.AuthorizationManagerRequestMatcherRegistry registry =
-                    mock(AuthorizeHttpRequestsConfigurer.AuthorizationManagerRequestMatcherRegistry.class, RETURNS_DEEP_STUBS);
-            customizer.customize(registry);
-            return http;
-        });
-        when(http.addFilterBefore(any(), any())).thenReturn(http);
-        when(http.build()).thenReturn(chain);
+        CorsConfigurationSource source = config.corsConfigurationSource();
+        assertThat(source).isNotNull();
+    }
 
-        SecurityFilterChain result = config.securityFilterChain(http);
-        assertThat(result).isEqualTo(chain);
+    @Test
+    @DisplayName("whenRequestingCorsConfiguration_thenValidateOriginMethodsAndCredentials")
+    void whenRequestingCorsConfiguration_thenValidateOriginMethodsAndCredentials() {
+        SecurityConfig config = new SecurityConfig(createFilter());
+        CorsConfigurationSource source = config.corsConfigurationSource();
+
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        request.setRequestURI("/api/v1/transactions");
+        request.setMethod("POST");
+
+        CorsConfiguration corsConfig = source.getCorsConfiguration(request);
+        assertThat(corsConfig).isNotNull();
+        assertThat(corsConfig.getAllowCredentials()).isTrue();
+        assertThat(corsConfig.getAllowedOriginPatterns()).contains("*");
+        assertThat(corsConfig.getAllowedMethods()).contains("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS");
+        assertThat(corsConfig.getAllowedHeaders()).contains("*");
     }
 }

@@ -97,10 +97,15 @@ Berdasarkan konfigurasi aktual pada `SecurityConfig.java` dan anotasi method sec
 | **Trans. Files** | `POST` | `/api/v1/transaction-files` | Authenticated | Upload file/bukti tambahan transaksi |
 | **Trans. Files** | `DELETE` | `/api/v1/transaction-files/{id}` | Authenticated | Hapus satu file transaksi berdasarkan ID |
 | **Trans. Files** | `DELETE` | `/api/v1/transaction-files/list` | Authenticated | Hapus sekumpulan file transaksi sekaligus (bulk) |
-| **Users** | `POST` | `/api/v1/users` | `ADMIN`, `SUPER_ADMIN` | Registrasi user / staf baru (Multipart) |
+| **Dashboard** | `GET` | `/api/v1/dashboard/metrics` | Authenticated | Ambil metrik overview, pendapatan harian, antrean express, & status mesin |
+| **Settings** | `GET` | `/api/v1/outlet/profile` | Authenticated | Ambil data profil outlet & konfigurasi toko |
+| **Settings** | `PUT` | `/api/v1/outlet/profile` | `ADMIN`, `SUPER_ADMIN` | Perbarui informasi profil outlet & operasional |
+| **Settings** | `GET` | `/api/v1/settings` | `ADMIN`, `SUPER_ADMIN` | Ambil pengaturan key-value sistem |
+| **Settings** | `POST` | `/api/v1/settings` | `ADMIN`, `SUPER_ADMIN` | Simpan / perbarui pengaturan key-value |
+| **Users** | `POST` | `/api/v1/users` | `ADMIN`, `SUPER_ADMIN` | Registrasi user / staf baru (Multipart: request + file) |
 | **Users** | `GET` | `/api/v1/users/{id}` | `ADMIN`, `SUPER_ADMIN` | Ambil data user berdasarkan ID |
-| **Users** | `GET` | `/api/v1/users` | `ADMIN`, `SUPER_ADMIN` | Ambil daftar user berhalaman & filter nama |
-| **Users** | `PUT` | `/api/v1/users/{id}` | `ADMIN`, `SUPER_ADMIN` | Perbarui profil user (Multipart) |
+| **Users** | `GET` | `/api/v1/users` | `ADMIN`, `SUPER_ADMIN` | Ambil daftar user berhalaman (filter: `name`, `role`, `username`, `phone`) |
+| **Users** | `PUT` | `/api/v1/users/{id}` | `ADMIN`, `SUPER_ADMIN` | Perbarui profil user & status `isActive` (Multipart) |
 | **Users** | `DELETE` | `/api/v1/users/{id}` | `ADMIN`, `SUPER_ADMIN` | Hapus user berdasarkan ID |
 | **Users** | `PATCH` | `/api/v1/users/{id}` | `ADMIN`, `SUPER_ADMIN` | Reset password user |
 

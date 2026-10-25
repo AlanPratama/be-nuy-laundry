@@ -14,6 +14,13 @@ public class TransactionSpecification {
         return (root, query, criteriaBuilder) -> {
             List<Predicate> predicates = new ArrayList<>();
 
+            if (transactionFilter != null && transactionFilter.getName() != null && !transactionFilter.getName().trim().isEmpty()) {
+                String pattern = "%" + transactionFilter.getName().trim().toLowerCase() + "%";
+                Predicate invoicePredicate = criteriaBuilder.like(criteriaBuilder.lower(root.get("invoiceNo")), pattern);
+                Predicate customerPredicate = criteriaBuilder.like(criteriaBuilder.lower(root.get("customerName")), pattern);
+                predicates.add(criteriaBuilder.or(invoicePredicate, customerPredicate));
+            }
+
             return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
         };
     }

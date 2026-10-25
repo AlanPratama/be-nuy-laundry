@@ -5,11 +5,14 @@ Backend RESTful API untuk sistem manajemen operasional laundry kiloan & satuan (
 ---
 
 ## 🚀 Fitur Utama
-- **Autentikasi & Otorisasi**: Berbasis JWT (Access Token & Refresh Token) dengan session blacklist & caching di Redis. Role: `SUPER_ADMIN`, `ADMIN`, `STAFF`.
+- **Autentikasi & Otorisasi**: Berbasis JWT (Access Token & Refresh Token) dengan session blacklist & caching di Redis. Role: `SUPER_ADMIN`, `ADMIN`, `STAFF` dengan toggle aktif/non-aktif akun staff.
+- **Dashboard Overview & Metrik Operasional**: Agregasi metrik analitika harian (`activeOrdersCount`, `doneOrdersCount`, `todayRevenue`, `totalTransactions`, `totalCustomers`, `totalPackages`) via endpoint terdedikasi.
+- **Pengaturan Outlet & Profil**: Pengelolaan jam operasional, radius antar-jemput gratis, biaya per kilometer, dan catatan struk nota.
 - **Manajemen Pelanggan (Customer)**: Pengelolaan data pelanggan, riwayat nomor telepon, dan alamat penjemputan/pengantaran.
 - **Katalog Paket & Layanan**: Manajemen paket laundry (kiloan/satuan), estimasi durasi pengerjaan, harga, serta integrasi keuntungan (*benefits*).
-- **Transaksi & Detail Pesanan**: Pembuatan transaksi cerdas dengan auto-generate nomor invoice unik, kalkulasi otomatis harga & tanggal estimasi selesai, serta update status pesanan.
+- **Transaksi & Detail Pesanan**: Pembuatan transaksi cerdas dengan auto-generate nomor invoice unik, kalkulasi otomatis harga & tanggal estimasi selesai, serta update status pesanan yang aman dan idempotent.
 - **Manajemen Berkas & Bukti Transaksi**: Integrasi langsung dengan MinIO Object Storage (S3-compatible) untuk penyimpanan nota pembayaran, foto kondisi pakaian sebelum & sesudah dicuci, dan dokumen invoice.
+- **Cross-Origin Resource Sharing (CORS)**: Dikonfigurasi terpusat untuk kelancaran integrasi Web Customer (Nuxt 3) dan Admin Dashboard (React Vite).
 
 ---
 

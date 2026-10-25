@@ -22,6 +22,8 @@ public class UserUpdateRequestDTO {
 
     private UserRole role;
 
+    private Boolean isActive;
+
     @JsonIgnore
     MultipartFile file;
 
