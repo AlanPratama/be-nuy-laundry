@@ -230,4 +230,17 @@ public class ArticleServiceImpl implements ArticleUseCase {
         String fileName = UUID.randomUUID().toString();
         return fileUseCase.upload(file, fileName, MinIoConstant.FOLDER.ARTICLE);
     }
+
+    @Override
+    @Transactional(readOnly = true)
+    public com.be_nuy_laundry.be_nuy_laundry.presentation.dtos.response.article.ArticleMetricsDTO getMetrics() {
+        long published = articleRepositoryPort.countByIsPublished(true);
+        long drafts = articleRepositoryPort.countByIsPublished(false);
+        long total = articleRepositoryPort.count();
+        return com.be_nuy_laundry.be_nuy_laundry.presentation.dtos.response.article.ArticleMetricsDTO.builder()
+                .totalArticles(total)
+                .publishedArticles(published)
+                .draftArticles(drafts)
+                .build();
+    }
 }

@@ -21,4 +21,8 @@ public interface ArticleRepositoryPort {
     boolean existsBySlug(String slug);
 
     boolean existsByTitle(String title);
+
+    long count();
+
+    long countByIsPublished(boolean isPublished);
 }

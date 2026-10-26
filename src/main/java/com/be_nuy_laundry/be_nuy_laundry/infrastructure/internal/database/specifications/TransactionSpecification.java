@@ -19,8 +19,10 @@ public class TransactionSpecification {
                     String pattern = "%" + transactionFilter.getName().trim().toLowerCase() + "%";
                     Predicate invoicePredicate = criteriaBuilder.like(criteriaBuilder.lower(root.get("invoiceNo")), pattern);
                     Predicate customerPredicate = criteriaBuilder.like(criteriaBuilder.lower(root.get("customerName")), pattern);
-                    predicates.add(criteriaBuilder.or(invoicePredicate, customerPredicate));
+                    Predicate phonePredicate = criteriaBuilder.like(criteriaBuilder.lower(root.get("customerPhone")), pattern);
+                    predicates.add(criteriaBuilder.or(invoicePredicate, customerPredicate, phonePredicate));
                 }
+
 
                 if (transactionFilter.getStatus() != null) {
                     predicates.add(criteriaBuilder.equal(root.get("status"), transactionFilter.getStatus()));

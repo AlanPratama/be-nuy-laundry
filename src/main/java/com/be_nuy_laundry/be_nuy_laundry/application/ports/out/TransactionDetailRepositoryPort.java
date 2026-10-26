@@ -8,5 +8,6 @@ import java.util.Optional;
 public interface TransactionDetailRepositoryPort {
     List<TransactionDetailModel> findByTransactionId(String transactionId);
     Optional<TransactionDetailModel> findById(String id);
+    TransactionDetailModel save(TransactionDetailModel model);
     void deleteById(String id);
 }

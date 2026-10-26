@@ -20,4 +20,6 @@ public interface ArticleUseCase {
     ArticleResponseDTO togglePublish(String id);
 
     String uploadArticleImage(org.springframework.web.multipart.MultipartFile file);
+
+    com.be_nuy_laundry.be_nuy_laundry.presentation.dtos.response.article.ArticleMetricsDTO getMetrics();
 }

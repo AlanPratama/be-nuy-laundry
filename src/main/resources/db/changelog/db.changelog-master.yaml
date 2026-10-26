@@ -53,3 +53,6 @@ databaseChangeLog:
   - include:
       file: 018-create-articles.yaml
       relativeToChangelogFile: true
+  - include:
+      file: 019-add-customer-aggregated-stats.yaml
+      relativeToChangelogFile: true

@@ -17,6 +17,10 @@ public class CustomerMapper {
         entity.setName(model.getName());
         entity.setPhone(model.getPhone());
         entity.setAddress(model.getAddress());
+        entity.setTotalCucianKg(model.getTotalCucianKg() != null ? model.getTotalCucianKg() : java.math.BigDecimal.ZERO);
+        entity.setTotalCucianSatuan(model.getTotalCucianSatuan() != null ? model.getTotalCucianSatuan() : 0);
+        entity.setTotalTransaksi(model.getTotalTransaksi() != null ? model.getTotalTransaksi() : 0);
+        entity.setLastOrder(model.getLastOrder());
         entity.setCreatedAt(model.getCreatedAt());
         entity.setUpdatedAt(model.getUpdatedAt());
 
@@ -43,6 +47,10 @@ public class CustomerMapper {
         model.setName(entity.getName());
         model.setPhone(entity.getPhone());
         model.setAddress(entity.getAddress());
+        model.setTotalCucianKg(entity.getTotalCucianKg() != null ? entity.getTotalCucianKg() : java.math.BigDecimal.ZERO);
+        model.setTotalCucianSatuan(entity.getTotalCucianSatuan() != null ? entity.getTotalCucianSatuan() : 0);
+        model.setTotalTransaksi(entity.getTotalTransaksi() != null ? entity.getTotalTransaksi() : 0);
+        model.setLastOrder(entity.getLastOrder());
         model.setCreatedAt(entity.getCreatedAt());
         model.setUpdatedAt(entity.getUpdatedAt());
 

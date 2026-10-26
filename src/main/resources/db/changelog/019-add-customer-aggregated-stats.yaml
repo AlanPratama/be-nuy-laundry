@@ -1,0 +1,29 @@
+databaseChangeLog:
+  - changeSet:
+      id: 019-add-customer-aggregated-stats
+      author: alan
+      changes:
+        - addColumn:
+            tableName: customers
+            columns:
+              - column:
+                  name: total_cucian_kg
+                  type: DECIMAL(10,2)
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+              - column:
+                  name: total_cucian_satuan
+                  type: INT
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+              - column:
+                  name: total_transaksi
+                  type: INT
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+              - column:
+                  name: last_order
+                  type: TIMESTAMP

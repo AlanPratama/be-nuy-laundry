@@ -46,6 +46,12 @@ public class ArticleController {
         return ResponseUtil.successPage(SUCCESS_RETRIEVE_DATA_MSG, articleUseCase.getAllArticles(search, category, isPublished, pageable));
     }
 
+    @GetMapping("/metrics")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
+    public ResponseEntity<ApiResponse<com.be_nuy_laundry.be_nuy_laundry.presentation.dtos.response.article.ArticleMetricsDTO>> getMetrics() {
+        return ResponseUtil.success(SUCCESS_RETRIEVE_DATA_MSG, articleUseCase.getMetrics());
+    }
+
     @GetMapping("/{idOrSlug}")
     public ResponseEntity<ApiResponse<ArticleResponseDTO>> getByIdOrSlug(@PathVariable String idOrSlug) {
         return ResponseUtil.success(SUCCESS_RETRIEVE_DATA_MSG, articleUseCase.getArticleByIdOrSlug(idOrSlug));

@@ -34,6 +34,12 @@ public class TransactionDetailMapper {
             entity.setPkg(pkg);
         }
 
+        if (model.getTransactionId() != null) {
+            com.be_nuy_laundry.be_nuy_laundry.infrastructure.internal.database.entity.TransactionEntity transaction = new com.be_nuy_laundry.be_nuy_laundry.infrastructure.internal.database.entity.TransactionEntity();
+            transaction.setId(model.getTransactionId());
+            entity.setTransaction(transaction);
+        }
+
         return entity;
     }
 

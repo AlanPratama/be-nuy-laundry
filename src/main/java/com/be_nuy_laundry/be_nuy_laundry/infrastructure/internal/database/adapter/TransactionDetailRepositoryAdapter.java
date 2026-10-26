@@ -27,6 +27,12 @@ public class TransactionDetailRepositoryAdapter implements TransactionDetailRepo
     }
 
     @Override
+    public TransactionDetailModel save(TransactionDetailModel model) {
+        var entity = TransactionDetailMapper.mapToEntity(model);
+        return TransactionDetailMapper.mapToDomain(transactionDetailJpaRepository.save(entity));
+    }
+
+    @Override
     public void deleteById(String id) {
         transactionDetailJpaRepository.deleteById(id);
     }

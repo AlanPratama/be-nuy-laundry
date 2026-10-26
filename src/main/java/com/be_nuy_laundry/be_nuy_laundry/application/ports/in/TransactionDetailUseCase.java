@@ -7,4 +7,6 @@ import java.util.Map;
 public interface TransactionDetailUseCase {
     Map<String, TransactionDetailModel> getByTransactionIdMap(String transactionId);
     void deleteById(String transactionDetailId);
+    TransactionDetailModel markDelivered(String transactionDetailId);
 }
+

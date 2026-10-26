@@ -16,11 +16,18 @@ public class PackageSpecification {
             List<Predicate> predicates = new ArrayList<>();
 
             if (packageFilter != null) {
-                if (ValueUtil.hasValueString(packageFilter.getName()))
-                    predicates.add(criteriaBuilder.like(criteriaBuilder.lower(root.get("name")), "%" + packageFilter.getName().toLowerCase() + "%"));
+                List<Predicate> searchPredicates = new ArrayList<>();
+                if (ValueUtil.hasValueString(packageFilter.getName())) {
+                    searchPredicates.add(criteriaBuilder.like(criteriaBuilder.lower(root.get("name")), "%" + packageFilter.getName().trim().toLowerCase() + "%"));
+                }
 
-                if (ValueUtil.hasValueString(packageFilter.getDescription()))
-                    predicates.add(criteriaBuilder.like(criteriaBuilder.lower(root.get("description")), "%" + packageFilter.getDescription().toLowerCase() + "%"));
+                if (ValueUtil.hasValueString(packageFilter.getDescription())) {
+                    searchPredicates.add(criteriaBuilder.like(criteriaBuilder.lower(root.get("description")), "%" + packageFilter.getDescription().trim().toLowerCase() + "%"));
+                }
+
+                if (!searchPredicates.isEmpty()) {
+                    predicates.add(criteriaBuilder.or(searchPredicates.toArray(new Predicate[0])));
+                }
 
                 if (ValueUtil.hasValueObject(packageFilter.getType()))
                     predicates.add(criteriaBuilder.equal(root.get("type"), packageFilter.getType()));

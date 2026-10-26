@@ -25,4 +25,6 @@ public interface ArticleJpaRepository extends JpaRepository<ArticleEntity, Strin
     boolean existsBySlug(String slug);
 
     boolean existsByTitle(String title);
+
+    long countByIsPublished(boolean isPublished);
 }

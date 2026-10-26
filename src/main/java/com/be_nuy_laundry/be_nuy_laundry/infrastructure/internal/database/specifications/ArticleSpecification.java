@@ -18,7 +18,8 @@ public class ArticleSpecification {
                 String searchPattern = "%" + search.trim().toLowerCase() + "%";
                 Predicate titleMatch = criteriaBuilder.like(criteriaBuilder.lower(root.get("title")), searchPattern);
                 Predicate excerptMatch = criteriaBuilder.like(criteriaBuilder.lower(root.get("excerpt")), searchPattern);
-                predicates.add(criteriaBuilder.or(titleMatch, excerptMatch));
+                Predicate contentMatch = criteriaBuilder.like(criteriaBuilder.lower(root.get("content")), searchPattern);
+                predicates.add(criteriaBuilder.or(titleMatch, excerptMatch, contentMatch));
             }
 
             if (ValueUtil.hasValueString(category) && !"ALL".equalsIgnoreCase(category) && !"SEMUA".equalsIgnoreCase(category)) {

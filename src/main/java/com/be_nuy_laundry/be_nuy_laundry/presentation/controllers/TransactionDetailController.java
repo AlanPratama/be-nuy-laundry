@@ -26,4 +26,11 @@ public class TransactionDetailController {
         return ResponseUtil.success(SUCCESS_DELETE_DATA_MSG, null);
     }
 
+    @PatchMapping("/{id}/delivered")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
+    public ResponseEntity<ApiResponse<com.be_nuy_laundry.be_nuy_laundry.domain.model.TransactionDetailModel>> markDelivered(@PathVariable String id) {
+        com.be_nuy_laundry.be_nuy_laundry.domain.model.TransactionDetailModel result = transactionDetailUseCase.markDelivered(id);
+        return ResponseUtil.success("SUCCESS", result);
+    }
+
 }

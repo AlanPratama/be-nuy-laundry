@@ -20,8 +20,8 @@ import java.util.Map;
 public class TransactionDetailServiceImpl implements TransactionDetailUseCase {
 
     private final TransactionDetailRepositoryPort transactionDetailRepositoryPort;
-
     private final TransactionRepositoryPort transactionRepositoryPort;
+    private final com.be_nuy_laundry.be_nuy_laundry.application.ports.in.CustomerUseCase customerUseCase;
 
     @Override
     public Map<String, TransactionDetailModel> getByTransactionIdMap(String transactionId) {
@@ -38,6 +38,49 @@ public class TransactionDetailServiceImpl implements TransactionDetailUseCase {
     public TransactionDetailModel findById(String transactionDetailId) {
         return transactionDetailRepositoryPort.findById(transactionDetailId)
                 .orElseThrow(() -> new DataNotFoundException("Transaksi detail tidak ditemukan"));
+    }
+
+    @Override
+    @Transactional
+    public TransactionDetailModel markDelivered(String transactionDetailId) {
+        TransactionDetailModel trxDetailModel = this.findById(transactionDetailId);
+        trxDetailModel.setDeliveredDate(java.time.LocalDateTime.now());
+        TransactionDetailModel updated = transactionDetailRepositoryPort.save(trxDetailModel);
+
+        if (trxDetailModel.getTransactionId() != null) {
+            TransactionModel existingTransactionModel = transactionRepositoryPort.findById(trxDetailModel.getTransactionId()).orElse(null);
+            if (existingTransactionModel != null) {
+                List<TransactionDetailModel> allDetails = transactionDetailRepositoryPort.findByTransactionId(existingTransactionModel.getId());
+                boolean allDelivered = allDetails.stream().allMatch(d -> d.getDeliveredDate() != null);
+                if (allDelivered && existingTransactionModel.getStatus() != com.be_nuy_laundry.be_nuy_laundry.infrastructure.internal.database.entity.enumrated.TransactionStatus.DONE) {
+                    existingTransactionModel.setStatus(com.be_nuy_laundry.be_nuy_laundry.infrastructure.internal.database.entity.enumrated.TransactionStatus.DONE);
+                    
+                    if (existingTransactionModel.getCustomer() != null && existingTransactionModel.getCustomer().getId() != null) {
+                        try {
+                            com.be_nuy_laundry.be_nuy_laundry.domain.model.CustomerModel cust = customerUseCase.getCustomerById(existingTransactionModel.getCustomer().getId());
+                            java.math.BigDecimal totalKg = java.math.BigDecimal.ZERO;
+                            int totalPcs = 0;
+                            for (TransactionDetailModel d : allDetails) {
+                                if (d.getPackageType() == com.be_nuy_laundry.be_nuy_laundry.infrastructure.internal.database.entity.enumrated.PackageType.WEIGHT) {
+                                    totalKg = totalKg.add(java.math.BigDecimal.valueOf(d.getQuantity() != null ? d.getQuantity() : 0));
+                                } else if (d.getPackageType() == com.be_nuy_laundry.be_nuy_laundry.infrastructure.internal.database.entity.enumrated.PackageType.PCS) {
+                                    totalPcs += (d.getQuantity() != null ? d.getQuantity() : 0);
+                                }
+                            }
+                            java.math.BigDecimal currentKg = cust.getTotalCucianKg() != null ? cust.getTotalCucianKg() : java.math.BigDecimal.ZERO;
+                            int currentPcs = cust.getTotalCucianSatuan() != null ? cust.getTotalCucianSatuan() : 0;
+                            cust.setTotalCucianKg(currentKg.add(totalKg));
+                            cust.setTotalCucianSatuan(currentPcs + totalPcs);
+                            customerUseCase.updateCustomer(cust.getId(), cust);
+                        } catch (Exception ignored) {
+                        }
+                    }
+                    transactionRepositoryPort.save(existingTransactionModel);
+                }
+            }
+        }
+
+        return updated;
     }
 
     @Override
@@ -65,5 +108,4 @@ public class TransactionDetailServiceImpl implements TransactionDetailUseCase {
 
         transactionRepositoryPort.save(existingTransactionModel);
     }
-
 }

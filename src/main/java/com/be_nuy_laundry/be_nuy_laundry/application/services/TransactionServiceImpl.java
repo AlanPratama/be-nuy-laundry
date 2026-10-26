@@ -120,8 +120,15 @@ public class TransactionServiceImpl implements TransactionUseCase {
 
         // FASE 2: Transaksi DB singkat dengan penanganan kompensasi jika gagal
         try {
-            return TransactionMapper.mapDomainToResponse(
-                    transactionRepositoryPort.save(transactionModel));
+            TransactionModel saved = transactionRepositoryPort.save(transactionModel);
+            try {
+                int currentTotal = customerModel.getTotalTransaksi() != null ? customerModel.getTotalTransaksi() : 0;
+                customerModel.setTotalTransaksi(currentTotal + 1);
+                customerModel.setLastOrder(transactionRequest.getOrderDate() != null ? transactionRequest.getOrderDate() : LocalDateTime.now());
+                customerUseCase.updateCustomer(customerModel.getId(), customerModel);
+            } catch (Exception ignored) {
+            }
+            return TransactionMapper.mapDomainToResponse(saved);
         } catch (Exception e) {
             cleanupFiles(transactionFileModels);
             throw e;
@@ -315,10 +322,47 @@ public class TransactionServiceImpl implements TransactionUseCase {
         TransactionModel existingTransactionModel = transactionRepositoryPort.findById(id)
                 .orElseThrow(() -> new DataNotFoundException("Transaksi tidak ditemukan"));
 
-        existingTransactionModel.setStatus(request.getStatus());
+        TransactionStatus oldStatus = existingTransactionModel.getStatus();
+        TransactionStatus newStatus = request.getStatus();
+
+        if (oldStatus != newStatus) {
+            existingTransactionModel.setStatus(newStatus);
+            if (existingTransactionModel.getCustomer() != null && existingTransactionModel.getCustomer().getId() != null) {
+                try {
+                    CustomerModel cust = customerUseCase.getCustomerById(existingTransactionModel.getCustomer().getId());
+                    BigDecimal totalKg = BigDecimal.ZERO;
+                    int totalPcs = 0;
+                    if (existingTransactionModel.getTransactionDetails() != null) {
+                        for (TransactionDetailModel d : existingTransactionModel.getTransactionDetails()) {
+                            if (d.getPackageType() == com.be_nuy_laundry.be_nuy_laundry.infrastructure.internal.database.entity.enumrated.PackageType.WEIGHT) {
+                                totalKg = totalKg.add(BigDecimal.valueOf(d.getQuantity() != null ? d.getQuantity() : 0));
+                            } else if (d.getPackageType() == com.be_nuy_laundry.be_nuy_laundry.infrastructure.internal.database.entity.enumrated.PackageType.PCS) {
+                                totalPcs += (d.getQuantity() != null ? d.getQuantity() : 0);
+                            }
+                        }
+                    }
+
+                    BigDecimal currentKg = cust.getTotalCucianKg() != null ? cust.getTotalCucianKg() : BigDecimal.ZERO;
+                    int currentPcs = cust.getTotalCucianSatuan() != null ? cust.getTotalCucianSatuan() : 0;
+
+                    if (newStatus == TransactionStatus.DONE && oldStatus != TransactionStatus.DONE) {
+                        cust.setTotalCucianKg(currentKg.add(totalKg));
+                        cust.setTotalCucianSatuan(currentPcs + totalPcs);
+                        customerUseCase.updateCustomer(cust.getId(), cust);
+                    } else if (oldStatus == TransactionStatus.DONE && newStatus != TransactionStatus.DONE) {
+                        cust.setTotalCucianKg(currentKg.subtract(totalKg).max(BigDecimal.ZERO));
+                        cust.setTotalCucianSatuan(Math.max(0, currentPcs - totalPcs));
+                        customerUseCase.updateCustomer(cust.getId(), cust);
+                    }
+                } catch (Exception ignored) {
+                }
+            }
+        }
+
         return TransactionMapper.mapDomainToResponse(
                 transactionRepositoryPort.save(existingTransactionModel));
     }
+
 
     @Override
     public com.be_nuy_laundry.be_nuy_laundry.presentation.dtos.response.transaction.header.TransactionMetricsDTO getMetrics() {

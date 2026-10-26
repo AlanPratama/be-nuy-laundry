@@ -57,4 +57,14 @@ public class ArticleRepositoryAdapter implements ArticleRepositoryPort {
     public boolean existsByTitle(String title) {
         return articleJpaRepository.existsByTitle(title);
     }
+
+    @Override
+    public long count() {
+        return articleJpaRepository.count();
+    }
+
+    @Override
+    public long countByIsPublished(boolean isPublished) {
+        return articleJpaRepository.countByIsPublished(isPublished);
+    }
 }
